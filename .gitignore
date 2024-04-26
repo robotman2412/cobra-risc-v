@@ -6,6 +6,8 @@
 target
 project
 .idea
+.metals
+.bloop
 .bsp
 tmp
 simWorkspace

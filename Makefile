@@ -4,7 +4,7 @@
 MAKEFLAGS += --silent
 
 SIM  = $(shell cd hdl/cobra; find sim -name '*.scala' | sed 's|\.scala$$||')
-WAVE = $(shell echo '$(SIM)' | sed 's|sim/|wave/|')
+WAVE = $(shell echo '$(SIM)' | sed 's|sim/|wave/|'g)
 HDL  = $(shell find hdl -name '*.scala')
 
 .PHONY: $(SIM)
@@ -23,6 +23,7 @@ $(SIM):
 	sbt "runMain cobra.sim.$(@F)"
 
 $(WAVE):
+	sbt "runMain cobra.sim.$(@F)"
 	gtkwave "simWorkspace/$(@F)$$/wave.fst"
 
 clean:
