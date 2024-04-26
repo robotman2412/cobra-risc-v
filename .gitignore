@@ -3,3 +3,9 @@
 .vscode
 **/fpga_proj
 **/__pycache__
+target
+project
+.idea
+.bsp
+tmp
+simWorkspace
