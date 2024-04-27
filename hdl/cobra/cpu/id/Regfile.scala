@@ -5,11 +5,10 @@ package cobra.cpu.id
 import cobra.cpu._
 import spinal.core._
 
-object Thing {
-    val ok = "1"
-}
-
-case class Regfile(cfg: CobraCfg = CobraCfg()) extends Component {
+/**
+ * Dual-read, single-write integer register file.
+ */
+case class Regfile(cfg: CobraCfg) extends Component {
     val io = new Bundle {
         val we      = in  Bool()
         val waddr   = in  UInt(5 bits)

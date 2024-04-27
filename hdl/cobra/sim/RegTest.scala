@@ -9,7 +9,7 @@ import spinal.core._
 import spinal.core.sim._
 
 object RegTest extends App {
-    Config.sim.compile(Regfile()).doSim(this.getClass.getSimpleName) { dut =>
+    Config.sim.compile(Regfile(CobraCfg())).doSim(this.getClass.getSimpleName) { dut =>
         // Fork a process to generate the reset and the clock on the dut
         dut.clockDomain.forkStimulus(period = 10)
 

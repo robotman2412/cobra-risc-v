@@ -6,7 +6,7 @@
 MAKEFLAGS += --silent
 
 SIM  = $(shell cd hdl/cobra; find sim -name '*.scala' | sed 's|\.scala$$||')
-WAVE = $(shell echo '$(SIM)' | sed 's|$$|.wave|'g)
+WAVE = $(shell cd hdl/cobra; find sim -name '*.scala' | sed 's|\.scala$$|.wave|')
 HDL  = $(shell find hdl -name '*.scala')
 
 .PHONY: $(SIM)
@@ -16,7 +16,7 @@ all:
 	echo '$(WAVE)'
 
 cmod:
-	sbt "runMain cobranest.CmodA7Verilog"
+	sbt "runMain cobra.nest.CmodA7Verilog"
 
 $(SIM):
 	sbt "runMain cobra.sim.$(@F)"

@@ -9,7 +9,7 @@ import spinal.core._
 import spinal.core.sim._
 
 object WBTest extends App {
-    Config.sim.compile(WriteBack(ports = 4)).doSim(this.getClass.getSimpleName) { dut =>
+    Config.sim.compile(WriteBack(CobraCfg(), 4, SInt(32 bits))).doSim(this.getClass.getSimpleName) { dut =>
         // Fork a process to generate the reset and the clock on the dut
         dut.clockDomain.forkStimulus(period = 10)
 
@@ -26,13 +26,13 @@ object WBTest extends App {
         dut.io.din(2).valid         #= true
         dut.io.din(2).payload.order #= 1
         dut.io.din(2).payload.regno #= 3
-        dut.io.din(2).payload.data  #= 0xdeadbeefl
+        dut.io.din(2).payload.data  #= 0xdeadbeef
         dut.clockDomain.waitSampling()
         
         dut.io.din(1).valid         #= true
         dut.io.din(1).payload.order #= 0
         dut.io.din(1).payload.regno #= 9
-        dut.io.din(1).payload.data  #= 0xcafebabel
+        dut.io.din(1).payload.data  #= 0xcafebabe
         dut.clockDomain.waitSampling()
         
         dut.io.din(1).valid         #= false

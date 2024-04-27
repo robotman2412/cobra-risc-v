@@ -1,4 +1,4 @@
-package cobra
+package cobra.nest
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 

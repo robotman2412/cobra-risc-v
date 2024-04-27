@@ -10,16 +10,15 @@ import spinal.lib._
 /**
  * Write-Back stage:
  * Re-orders a continuous stream of instruction results into program order.
- * Instructions that do not have a result must set `regno` to 0.
  */
-case class WriteBack(cfg: CobraCfg = CobraCfg(), ports: Int = 2) extends Component {
+case class WriteBack[T <: Data](cfg: CobraCfg, ports: Int, dtype: HardType[T]) extends Component {
     val io = new Bundle {
         // Unordered instruction streams.
-        val din     = Vec.fill(ports)(slave Stream(Result(cfg)))
+        val din     = Vec.fill(ports)(slave Stream(Result(cfg, dtype())))
         // Regfile write port.
         val commit  = out port Bool()
         val waddr   = out port UInt(5 bits)
-        val dout    = out port UInt(cfg.XLEN bits)
+        val dout    = out port dtype()
         // Which instruction is about to be committed.
         val next    = out port UInt(cfg.orderBits bits)
     }

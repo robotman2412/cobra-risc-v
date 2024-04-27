@@ -9,12 +9,13 @@ case class CobraISA(
     RV64:           Boolean     = false,
     // Supported standard instruction sets.
     M:              Boolean     = true,
-    A:              Boolean     = true,
-    F:              Boolean     = true,
-    C:              Boolean     = true
+    A:              Boolean     = false,
+    F:              Boolean     = false,
+    D:              Boolean     = false,
+    C:              Boolean     = false
 ) {
-    val D = RV64 && F
     val XLEN = if (RV64) 64 else 32
+    val FLEN = if (D) 64 else 32
 }
 
 case class CobraPriv(
@@ -42,11 +43,12 @@ case class CobraCfg(
 ) {
     def valitate(): Boolean = {
         if (priv.S_mode && !priv.U_mode) return false
-        if (isa.D && !(isa.F && isa.RV64)) return false
+        if (isa.D && !isa.F) return false
         if (priv.pmpCount != 0 && priv.pmpCount != 16 && priv.pmpCount != 64) return false
         if (priv.pmpCount != 0 && (priv.pmpGrain < 2 || priv.pmpGrain >= paddrWidth - 4)) return false
         return true
     }
     val XLEN = isa.XLEN
+    val FLEN = isa.FLEN
     val orderBits = 4
 }
