@@ -1,5 +1,7 @@
 package cobra.cpu.id
 
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 import cobra.cpu.CobraCfg
 import cobra.cpu.wb.Result
 import spinal.core._

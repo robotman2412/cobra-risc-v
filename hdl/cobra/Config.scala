@@ -1,5 +1,7 @@
 package cobra
 
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 import spinal.core._
 import spinal.core.sim._
 

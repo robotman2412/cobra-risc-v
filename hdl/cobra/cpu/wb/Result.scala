@@ -1,5 +1,7 @@
 package cobra.cpu.wb
 
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 import cobra.cpu._
 import spinal.core._
 

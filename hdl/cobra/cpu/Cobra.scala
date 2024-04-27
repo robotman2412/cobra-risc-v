@@ -1,5 +1,7 @@
 package cobra.cpu
 
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 import spinal.core._
 
 case class CobraISA(

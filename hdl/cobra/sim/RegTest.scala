@@ -1,5 +1,7 @@
 package cobra.sim
 
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 import cobra._
 import cobra.cpu._
 import cobra.cpu.id._

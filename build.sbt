@@ -1,3 +1,6 @@
+
+// Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 ThisBuild / version := "1.0"
 ThisBuild / scalaVersion := "2.12.18"
 ThisBuild / organization := "org.example"

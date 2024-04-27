@@ -1,4 +1,6 @@
 
+# Copyright © 2024, Julian Scheffers, see LICENSE for info
+
 .PHONY: all cmod vhdl sim wave clean
 
 MAKEFLAGS += --silent
