@@ -1,0 +1,30 @@
+package cobra.cpu.id
+
+import cobra.cpu._
+import spinal.core._
+
+object Thing {
+    val ok = "1"
+}
+
+case class Regfile(cfg: CobraCfg = CobraCfg()) extends Component {
+    val io = new Bundle {
+        val we      = in  Bool()
+        val waddr   = in  UInt(5 bits)
+        val wdata   = in  UInt(cfg.XLEN bits)
+        
+        val raddr_a = in  UInt(5 bits)
+        val rdata_a = out UInt(cfg.XLEN bits)
+        
+        val raddr_b = in  UInt(5 bits)
+        val rdata_b = out UInt(cfg.XLEN bits)
+    }
+    
+    val storage = Mem(UInt(cfg.XLEN bits), 32)
+    storage.init(List.fill(32)(U"0"))
+    when (io.we && io.waddr =/= U"0") {
+        storage.write(io.waddr, io.wdata)
+    }
+    io.rdata_a := storage.readAsync(io.raddr_a)
+    io.rdata_b := storage.readAsync(io.raddr_b)
+}
