@@ -29,7 +29,7 @@ case class WriteBack[T <: Data](cfg: CobraCfg, ports: Int, dtype: HardType[T]) e
     // Matching instruction bitmask.
     val nextMask = Bits(ports bits)
     
-    for (i <- 0 to cfg.orderBits-1) {
+    for (i <- 0 to ports-1) {
         // Compare available results.
         nextMask(i) := io.din(i).valid && io.din(i).payload.order === next
         // Consume the matching instruction.
