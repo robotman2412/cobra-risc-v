@@ -1,9 +1,8 @@
-package cobra.cpu.id
+package cobra.cpu.backend
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.CobraCfg
-import cobra.cpu.wb.Result
 import spinal.core._
 import spinal.lib._
 

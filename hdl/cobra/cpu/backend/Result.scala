@@ -1,9 +1,11 @@
-package cobra.cpu.wb
+package cobra.cpu.backend
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
 import spinal.core._
+
+
 
 /**
  * Integer or floating-point result.

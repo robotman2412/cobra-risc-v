@@ -1,4 +1,4 @@
-package cobra.cpu.id
+package cobra.cpu.frontend
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 

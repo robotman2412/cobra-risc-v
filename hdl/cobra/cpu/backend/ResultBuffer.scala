@@ -1,4 +1,4 @@
-package cobra.cpu.wb
+package cobra.cpu.backend
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
