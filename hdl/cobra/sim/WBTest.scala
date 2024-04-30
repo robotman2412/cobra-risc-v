@@ -4,27 +4,27 @@ package cobra.sim
 
 import cobra._
 import cobra.cpu._
-import cobra.cpu.backend.Result
 import cobra.cpu.backend.ResultBuffer
 import cobra.cpu.backend.WriteBack
+import cobra.cpu.execution.ExecResult
 import spinal.core._
 import spinal.core.sim._
 import spinal.lib._
 
-case class WBBench[T <: Data](cfg: CobraCfg, dtype: HardType[T]) extends Component {
+case class WBBench(cfg: CobraCfg, width: Int) extends Component {
     val io = new Bundle {
         // Unordered instruction streams.
-        val din_a   = slave Stream(Result(cfg, dtype()))
-        val din_b   = slave Stream(Result(cfg, dtype()))
+        val din_a   = slave Stream(ExecResult(cfg, width))
+        val din_b   = slave Stream(ExecResult(cfg, width))
         // Regfile write port.
         val commit  = out port Bool()
         val waddr   = out port UInt(5 bits)
-        val dout    = out port dtype()
+        val dout    = out port Bits(width bits)
         // Which instruction is about to be committed.
         val next    = out port UInt(cfg.orderBits bits)
     }
-    val wb  = new WriteBack(cfg, 2, dtype())
-    val buf = new ResultBuffer(cfg, dtype())
+    val wb  = new WriteBack(cfg, 2, width)
+    val buf = new ResultBuffer(cfg, width)
     buf.io.din   << io.din_a
     wb.io.din(0) << buf.io.dout
     wb.io.din(1) << io.din_b
@@ -35,7 +35,7 @@ case class WBBench[T <: Data](cfg: CobraCfg, dtype: HardType[T]) extends Compone
 }
 
 object WBTest extends App {
-    Config.sim.compile(WBBench(CobraCfg(), SInt(32 bits))).doSim(this.getClass.getSimpleName) { dut =>
+    Config.sim.compile(WBBench(CobraCfg(), 32)).doSim(this.getClass.getSimpleName) { dut =>
         // Fork a process to generate the reset and the clock on the dut
         dut.clockDomain.forkStimulus(period = 10)
 
@@ -50,16 +50,16 @@ object WBTest extends App {
         dut.io.din_a.valid         #= true
         dut.io.din_a.payload.order #= 1
         dut.io.din_a.payload.regno #= 3
-        dut.io.din_a.payload.data  #= 0xdeadbeef
+        dut.io.din_a.payload.data  #= BigInt("deadbeef", 16)
         dut.clockDomain.waitSampling()
         
         dut.io.din_b.valid         #= true
         dut.io.din_b.payload.order #= 0
         dut.io.din_b.payload.regno #= 9
-        dut.io.din_b.payload.data  #= 0xcafebabe
+        dut.io.din_b.payload.data  #= BigInt("cafebabe", 16)
         dut.io.din_a.payload.order #= 2
         dut.io.din_a.payload.regno #= 3
-        dut.io.din_a.payload.data  #= 0xf00dbabe
+        dut.io.din_a.payload.data  #= BigInt("f00dbabe", 16)
         dut.clockDomain.waitSampling()
         
         dut.io.din_b.valid         #= false

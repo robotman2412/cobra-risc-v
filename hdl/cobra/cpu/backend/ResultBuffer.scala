@@ -3,6 +3,7 @@ package cobra.cpu.backend
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
+import cobra.cpu.execution.ExecResult
 import spinal.core._
 import spinal.lib._
 
@@ -10,13 +11,13 @@ import spinal.lib._
  * Instruction result buffer stage.
  * Can store a single instruction result when the WriteBack is not ready to receive it.
  */
-case class ResultBuffer[T <: Data](cfg: CobraCfg, dtype: HardType[T]) extends Component {
+case class ResultBuffer(cfg: CobraCfg, width: Int) extends Component {
     val io = new Bundle {
-        val din  = slave  Stream(Result(cfg, dtype()))
-        val dout = master Stream(Result(cfg, dtype()))
+        val din  = slave  Stream(ExecResult(cfg, width))
+        val dout = master Stream(ExecResult(cfg, width))
     }
     val hasdat = RegInit(False)
-    val buf    = Reg(Result(cfg, dtype()))
+    val buf    = Reg(ExecResult(cfg, width))
     
     io.dout.valid := io.din.valid || hasdat
     when (hasdat) {

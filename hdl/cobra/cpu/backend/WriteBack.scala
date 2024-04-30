@@ -3,6 +3,7 @@ package cobra.cpu.backend
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.CobraCfg
+import cobra.cpu.execution.ExecResult
 import spinal.core._
 import spinal.lib._
 
@@ -10,14 +11,14 @@ import spinal.lib._
  * Write-Back stage:
  * Re-orders a continuous stream of instruction results into program order.
  */
-case class WriteBack[T <: Data](cfg: CobraCfg, ports: Int, dtype: HardType[T]) extends Component {
+case class WriteBack(cfg: CobraCfg, ports: Int, width: Int) extends Component {
     val io = new Bundle {
         // Unordered instruction streams.
-        val din     = Vec.fill(ports)(slave Stream(Result(cfg, dtype())))
+        val din     = Vec.fill(ports)(slave Stream(ExecResult(cfg, width)))
         // Regfile write port.
         val commit  = out port Bool()
         val waddr   = out port UInt(5 bits)
-        val dout    = out port dtype()
+        val dout    = out port Bits(width bits)
         // Which instruction is about to be committed.
         val next    = out port UInt(cfg.orderBits bits)
     }
