@@ -4,6 +4,7 @@ package cobra.cpu.frontend
 
 import cobra.Riscv
 import cobra.cpu._
+import cobra.cpu.frontend.DecodedInsn.ExeType
 import spinal.core._
 import spinal.lib._
 
@@ -12,7 +13,12 @@ import spinal.lib._
 /**
  * Decoded instruction data.
  */
-case class DecodedInsn() extends Bundle {
+case class DecodedInsn(
+    val hasMem: Boolean = true,
+    val hasAlu: Boolean = true,
+    val hasMul: Boolean = true,
+    val hasDiv: Boolean = true
+) extends Bundle {
     // Register indices.
     val rs1     = UInt(5 bits)
     val rs2     = UInt(5 bits)
@@ -32,18 +38,27 @@ case class DecodedInsn() extends Bundle {
     // Float operation size.
     val fpSize  = UInt(2 bits)
     // Memory access control signals.
-    val mem     = DecodedInsn.Mem()
+    val mem     = hasMem generate DecodedInsn.Mem()
     // Perform 32-bit integer operation.
     val op32    = Bool()
     // ALU control signals.
-    val alu     = DecodedInsn.ALU()
+    val alu     = hasAlu generate DecodedInsn.ALU()
     // Multiplier control signals.
-    val mul     = DecodedInsn.Mul()
+    val mul     = hasMul generate DecodedInsn.Mul()
     // Divider control signals.
-    val div     = DecodedInsn.Div()
+    val div     = hasDiv generate DecodedInsn.Div()
 }
 
 object DecodedInsn {
+    /** Generate DecodedInsn from capabilities list. */
+    def apply(capabilities: Seq[SpinalEnumElement[ExeType.type]]): DecodedInsn = {
+        return DecodedInsn(
+            capabilities.contains(ExeType.MEM),
+            capabilities.contains(ExeType.ALU),
+            capabilities.contains(ExeType.MUL),
+            capabilities.contains(ExeType.DIV)
+        )
+    }
     /** Required execution unit type. */
     object ExeType extends SpinalEnum {
         val MEM, ALU, MUL, DIV = newElement()

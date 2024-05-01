@@ -12,10 +12,16 @@ import spinal.lib._
 /**
  * Execution unit input signals.
  */
-case class ExecInput(cfg: CobraCfg, width: Int, nparam: Int) extends Bundle {
+case class ExecInput(
+    val cfg:      CobraCfg,
+    val width:    Int,
+    val nParam:   Int,
+    val supports: Seq[SpinalEnumElement[DecodedInsn.ExeType.type]] = null
+) extends Bundle {
     val order   = UInt(cfg.orderBits bits)
-    val data    = Vec.fill(nparam)(Bits(width bits))
-    val insn    = DecodedInsn()
+    val data    = Vec.fill(nParam)(Bits(width bits))
+    val insn    = if (supports != null) DecodedInsn(supports) else DecodedInsn()
+    val pc      = UInt(cfg.paddrWidth bits)
 }
 
 /**
@@ -28,6 +34,14 @@ case class ExecResult(cfg: CobraCfg, width: Int) extends Bundle {
     val we    = Bool()
     val regno = UInt(5 bits)
     val data  = Bits(width bits)
+    val pc      = UInt(cfg.paddrWidth bits)
+}
+
+/**
+ * Creates execution units.
+ */
+object ExecUnit {
+    type Factory = CobraCfg => ExecUnit
 }
 
 /**
@@ -46,25 +60,41 @@ abstract class ExecUnit(
         val dout    = master Stream(ExecResult(cfg, width))
     }
     
-    /** Ordering. */
-    val order   = Reg(UInt(cfg.orderBits bits))
+    /** Generates logic that detects whether this unit supports an operation. */
+    def supportsLogic(thing: SpinalEnumCraft[DecodedInsn.ExeType.type]): Bool = {
+        val supportsTmp = Bool()
+        supportsTmp := False
+        for (mode <- supports) {
+            when (thing === mode) {
+                supportsTmp := True
+            }
+        }
+        return supportsTmp
+    }
+    
     /** Instruction is valid. */
     val valid   = RegInit(False)
+    /** Ordering. */
+    val order   = Reg(UInt(cfg.orderBits bits))
     /** Operands / input data. */
     val data    = Reg(Vec.fill(nparam)(Bits(width bits)))
     /** Instruction buffer. */
-    val insn    = Reg(DecodedInsn())
+    val insn    = Reg(DecodedInsn(supports))
+    /** Current program counter. */
+    val pc      = Reg(UInt(cfg.paddrWidth bits))
     
     // Output logic.
     io.dout.payload.regno   := insn.rd
     io.dout.payload.we      := insn.usesRd
     io.dout.payload.order   := order
+    io.dout.payload.pc      := pc
     
     // Buffer logic.
     when (io.din.ready && io.din.valid) {
-        insn  := io.din.payload.insn
         order := io.din.payload.order
         data  := io.din.payload.data
+        insn  := io.din.payload.insn
+        pc    := io.din.payload.pc
         valid := True
     } elsewhen (io.din.ready) {
         valid := False

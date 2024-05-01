@@ -1,8 +1,9 @@
-package cobra.cpu.execution
+package cobra.cpu.execution.unit
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.CobraCfg
+import cobra.cpu.execution._
 import cobra.cpu.frontend.DecodedInsn._
 import spinal.core._
 import spinal.lib._
@@ -34,9 +35,9 @@ case class ALU(cfg: CobraCfg) extends ExecUnit(cfg.XLEN, 2, Seq(ExeType.ALU)) {
         rhs(cfg.XLEN-1) := !data(1)(cfg.XLEN-1)
     }
     when (insn.alu.subtract) {
-        rhs(cfg.XLEN-2 downto 2) := ~data(1)(cfg.XLEN-2 downto 2).asUInt
+        rhs(cfg.XLEN-2 downto 0) := ~data(1)(cfg.XLEN-2 downto 0).asUInt
     }
-    val adder = lhs + rhs
+    val adder = lhs.expand + rhs.expand
     
     // Comparator.
     val zero  = adder === U(0, cfg.XLEN bits)
@@ -53,26 +54,26 @@ case class ALU(cfg: CobraCfg) extends ExecUnit(cfg.XLEN, 2, Seq(ExeType.ALU)) {
     val shifter = UInt(cfg.XLEN bits)
     when (insn.alu.shiftRight && insn.alu.arithShift) {
         // Arithmetic shift right.
-        shifter := (data(0).asSInt >> data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt).asUInt
+        shifter := (data(0).asSInt |>> data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt).asUInt
         
     } elsewhen (insn.alu.shiftRight) {
         // Logical shift right.
-        shifter := data(0).asUInt >> data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt
+        shifter := data(0).asUInt |>> data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt
         
     } otherwise {
         // Logical shift left.
-        shifter := data(0).asUInt << data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt
+        shifter := data(0).asUInt |<< data(1)(log2Up(cfg.XLEN)-1 downto 0).asUInt
     }
     
     // Output multiplexer.
     switch (insn.alu.mux) {
-        is (ALUMux.ADDER)      { io.dout.payload.data := adder.asBits }
-        is (ALUMux.SHIFTER)    { io.dout.payload.data := shifter.asBits }
+        is (ALUMux.ADDER)      { io.dout.payload.data := adder.asBits.resize(cfg.XLEN) }
+        is (ALUMux.SHIFTER)    { io.dout.payload.data := shifter.asBits.resize(cfg.XLEN) }
         is (ALUMux.COMPARATOR) { io.dout.payload.data := cmp.asBits.resize(cfg.XLEN) }
         is (ALUMux.BITWISE)    { io.dout.payload.data := bitwise }
     }
     
     // Stream logic.
-    io.din.ready  := io.dout.ready
+    io.din.ready  := io.dout.ready || !valid
     io.dout.valid := valid
 }
