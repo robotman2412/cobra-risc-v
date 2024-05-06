@@ -4,7 +4,7 @@ package cobra.cpu.execution.unit
 
 import cobra.cpu.CobraCfg
 import cobra.cpu.execution._
-import cobra.cpu.frontend.DecodedInsn._
+import cobra.cpu.decode.DecodedInsn._
 import spinal.core._
 import spinal.lib._
 

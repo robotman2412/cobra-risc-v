@@ -4,9 +4,10 @@ package cobra.sim
 
 import cobra._
 import cobra.cpu._
+import cobra.cpu.decode.InsnDecoder
+import cobra.cpu.decode.Regfile
 import cobra.cpu.execution._
 import cobra.cpu.execution.unit._
-import cobra.cpu.frontend._
 import spinal.core._
 import spinal.core.sim._
 import spinal.lib._

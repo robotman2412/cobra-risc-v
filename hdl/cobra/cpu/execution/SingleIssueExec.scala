@@ -3,9 +3,9 @@ package cobra.cpu.execution
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
-import cobra.cpu.frontend._
 import spinal.core._
 import spinal.lib._
+import cobra.cpu.decode.{IssuedInsn, RegRead}
 
 
 

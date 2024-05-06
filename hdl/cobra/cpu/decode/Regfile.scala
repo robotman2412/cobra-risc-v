@@ -1,4 +1,4 @@
-package cobra.cpu.frontend
+package cobra.cpu.decode
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 

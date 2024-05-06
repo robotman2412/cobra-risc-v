@@ -4,7 +4,7 @@ package cobra.sim
 
 import cobra._
 import cobra.cpu._
-import cobra.cpu.frontend.Regfile
+import cobra.cpu.decode.Regfile
 import spinal.core._
 import spinal.core.sim._
 

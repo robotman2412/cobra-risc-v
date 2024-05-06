@@ -3,7 +3,7 @@ package cobra.cpu.execution
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.CobraCfg
-import cobra.cpu.frontend.DecodedInsn
+import cobra.cpu.decode.DecodedInsn
 import spinal.core._
 import spinal.lib._
 

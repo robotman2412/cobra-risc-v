@@ -4,6 +4,7 @@ package cobra.cpu
 
 import cobra.cpu._
 import spinal.core._
+import spinal.lib.bus.amba3.ahblite.AhbLite3Config
 
 
 
@@ -66,35 +67,56 @@ case class MemRange(
  */
 case class CobraCfg(
     /* ==== Supported RISC-V features ==== */
-    // Supported instruction sets.
+    /** Supported instruction sets. */
     isa:            CobraISA    = ISA"RV64GC",
-    // Supported privileged features.
+    /** Supported privileged features. */
     priv:           CobraPriv   = CobraPriv(),
     
     /* ==== I/O parameters ==== */
-    // Maximum physical address width.
+    /** Maximum physical address width. */
     paddrWidth:     Int         = 32,
-    // Number of IRQ channels including the disabled channel 0.
+    /** Number of IRQ channels including the disabled channel 0. */
     irqCount:       Int         = 32,
     
     /* ==== Pipeline topology ==== */
-    // Merge multiplier and divider into one stage.
+    /** Merge multiplier and divider into one stage. */
     mergeMulDiv:    Boolean     = false,
-    // Merge ALU and the memory stages into one stage.
+    /** Merge ALU and the memory stages into one stage. */
     mergeALUMem:    Boolean     = false,
     
     /* ==== Tuning parameters ==== */
-    // Multiplier delay / latency.
+    /** Multiplier delay / latency. */
     mulLatency:     Int         = 2,
-    // Use a pipelined multiplier instead of a cyclic one.
+    /** Use a pipelined multiplier instead of a cyclic one. */
     mulPipelined:   Boolean     = false,
-    // Divider delay / latency.
+    /** Divider delay / latency. */
     divLatency:     Int         = 6,
-    // Use a pipelined divider instead of a cyclic one.
-    divPipelined:   Boolean     = false
+    /** Use a pipelined divider instead of a cyclic one. */
+    divPipelined:   Boolean     = false,
+    
+    /* ==== Miscellaneous ==== */
+    /** Entrypoint address at reset. */
+    entrypoint:     BigInt      = 0x10000000l,
 ) {
     assert(priv.pmpGrain < paddrWidth, "PMP granularity must be less then address width")
-    val XLEN = isa.XLEN
-    val FLEN = isa.FLEN
-    val orderBits = 4
+    if (isa.RV64) {
+        assert(paddrWidth <= 56, "Maximum supported RV64 physical address width is 56")
+    } else if (priv.S_mode) {
+        assert(paddrWidth <= 34, "Maximum supported RV32 with S-mode physical address width is 34")
+    } else {
+        assert(paddrWidth <= 32, "Maximum supported RV32 without S-mode physical address width is 32")
+    }
+    assert(paddrWidth >= 16, "Minimum supported physical address width is 16")
+    /** Width of integer registers and CSRs. */
+    val XLEN        = isa.XLEN
+    /** Width of floating-point registers. */
+    val FLEN        = isa.FLEN
+    /** Number of bits required to uniquely represent in-flight instruction ordering. */
+    val orderBits   = 4
+    /** Derived maximum virtual address width. */
+    val vaddrWidth  = if (!priv.S_mode) paddrWidth else if (isa.RV64) 56 else 32
+    /** Derived maximum virtual page number width. */
+    val vpnWidth    = if (!priv.S_mode) paddrWidth-12 else if (isa.RV64) 45 else 20
+    /** Derived maximum physical page number width. */
+    val ppnWidth    = if (!priv.S_mode) paddrWidth-12 else if (isa.RV64) 44 else 22
 }

@@ -5,7 +5,6 @@ package cobra.cpu.execution
 import cobra._
 import cobra.cpu._
 import cobra.cpu.execution._
-import cobra.cpu.frontend._
 import spinal.core._
 import spinal.lib._
 
