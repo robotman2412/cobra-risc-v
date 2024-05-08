@@ -94,9 +94,18 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     }
     
     /** Instruction buffer. */
-    val buffer = new Area {
+    val buffer = if (cfg.isa.C) new Area {
+        // The connector.
+        rawStr.ready        := bufStr.ready
+        bufStr.valid        := rawStr.valid
+        bufStr.payload(0).assignDontCare()
+        bufStr.payload(1)   := rawStr.payload
+        
+    } else new Area {
+        // The buffer.
         val validReg = RegInit(False)
         val bufReg   = Reg(FetchedInsn(cfg))
+        
         // Incoming stream logic.
         when (branchTrig) {
             bufReg.assignDontCare()
@@ -106,6 +115,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
             validReg        := True
         }
         rawStr.ready        := !validReg || bufStr.ready
+        
         // Outgoing stream logic.
         bufStr.valid        := validReg && rawStr.valid
         bufStr.payload(0)   := bufReg
@@ -115,14 +125,16 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** Instruction recombination. */
     val recomb = new Area {
         /** Bit 1 of PC register. */
-        val pc1  = RegInit(Bool((cfg.entrypoint & 1) != 0))
+        val pc1  = if (cfg.isa.C) RegInit(Bool((cfg.entrypoint & 1) != 0)) else False
         
         /** Incoming instruction is 32-bit. */
-        val is32 = Bool()
-        when (pc1) {
-            is32 := bufStr.payload(0).raw(17 downto 16) === M"11"
-        } otherwise {
-            is32 := bufStr.payload(0).raw( 1 downto  0) === M"11"
+        val is32 = if (cfg.isa.C) Bool() else True
+        if (cfg.isa.C) {
+            when (pc1) {
+                is32 := bufStr.payload(0).raw(17 downto 16) === M"11"
+            } otherwise {
+                is32 := bufStr.payload(0).raw( 1 downto  0) === M"11"
+            }
         }
         
         // Recombination logic.
@@ -162,9 +174,11 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         }
         
         // Stream logic.
-        io.dout.valid := bufStr.valid
+        io.dout.valid := bufStr.valid && !branchTrig
         when (branchTrig) {
-            pc1          := branchAddr(1)
+            if (cfg.isa.C) {
+                pc1      := branchAddr(1)
+            }
             bufStr.ready.assignDontCare()
         } elsewhen (!bufStr.valid) {
             bufStr.ready.assignDontCare()
@@ -174,7 +188,9 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
             bufStr.ready := True
         } otherwise {
             bufStr.ready := pc1
-            pc1          := !pc1
+            if (cfg.isa.C) {
+                pc1      := !pc1
+            }
         }
     }
 }

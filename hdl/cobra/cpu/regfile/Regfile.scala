@@ -1,4 +1,4 @@
-package cobra.cpu.decode
+package cobra.cpu.regfile
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
@@ -13,10 +13,11 @@ import spinal.lib._
 case class RegRead(width: Int) extends Bundle with IMasterSlave {
     val regno   = UInt(5 bits)
     val data    = Bits(width bits)
+    val stale   = Bool()
     
     def asMaster() = {
         out(regno)
-        in (data)
+        in (data, stale)
     }
 }
 
@@ -53,7 +54,8 @@ case class Regfile(cfg: CobraCfg, width: Int, wports: Int = 1, rports: Int = 2) 
         }
     }
     for (port <- io.read) {
-        port.data := storage.readAsync(port.regno)
+        port.data  := storage.readAsync(port.regno)
+        port.stale := False
     }
     
     def read(regno: Int) = {

@@ -6,7 +6,7 @@ import cobra._
 import cobra.cpu._
 import cobra.cpu.backend.ResultBuffer
 import cobra.cpu.backend.WriteBack
-import cobra.cpu.execution.ExecResult
+import cobra.cpu.execute.ExecResult
 import spinal.core._
 import spinal.core.sim._
 import spinal.lib._

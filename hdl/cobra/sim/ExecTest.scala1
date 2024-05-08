@@ -5,12 +5,13 @@ package cobra.sim
 import cobra._
 import cobra.cpu._
 import cobra.cpu.decode.InsnDecoder
-import cobra.cpu.decode.Regfile
-import cobra.cpu.execution._
-import cobra.cpu.execution.unit._
+import cobra.cpu.backend.Regfile
+import cobra.cpu.execute._
 import spinal.core._
 import spinal.core.sim._
 import spinal.lib._
+import cobra.cpu.execute.unit.{MUL, ALU}
+import cobra.cpu.execute.{ExecUnit, ScalarExecComplex}
 
 case class ExecTestData(cfg: CobraCfg) extends Bundle {
     val insn = Bits(32 bits)
@@ -36,7 +37,7 @@ case class ExecTB(cfg: CobraCfg) extends Component {
     decoder.io.decomp := io.din.payload.insn
     io.din.ready := True
     val regfile = Regfile(cfg, cfg.XLEN)
-    val complex = SingleIssueExec(cfg, List[CobraCfg => ExecUnit](
+    val complex = ScalarExecComplex(cfg, List[CobraCfg => ExecUnit](
         cfg => ALU(cfg),
         cfg => MUL.Simple(cfg)
     ))
@@ -44,11 +45,11 @@ case class ExecTB(cfg: CobraCfg) extends Component {
     regfile.io.write(0).we      := complex.io.dout.valid && complex.io.dout.payload.we
     regfile.io.write(0).regno   := complex.io.dout.payload.regno
     regfile.io.write(0).data    := complex.io.dout.payload.data
-    complex.io.reg <> regfile.io.read
-    complex.io.decd.valid         := io.din.valid
-    complex.io.decd.payload.order := order
-    complex.io.decd.payload.insn  := decoder.io.decd
-    complex.io.decd.payload.pc.assignDontCare()
+    complex.io.regread <> regfile.io.read
+    complex.io.din.valid         := io.din.valid
+    complex.io.din.payload.order := order
+    complex.io.din.payload.insn  := decoder.io.decd
+    complex.io.din.payload.pc.assignDontCare()
     when (fireIssue) {
         order := order + U(1, cfg.orderBits bits)
     }

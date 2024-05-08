@@ -1,9 +1,9 @@
-package cobra.cpu.execution
+package cobra.cpu.execute
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
-import cobra.cpu.CobraCfg
-import cobra.cpu.decode.DecodedInsn
+import cobra.cpu._
+import cobra.cpu.decode._
 import spinal.core._
 import spinal.lib._
 

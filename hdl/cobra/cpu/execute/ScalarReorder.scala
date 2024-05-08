@@ -1,4 +1,4 @@
-package cobra.cpu.execution
+package cobra.cpu.execute
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
@@ -12,12 +12,14 @@ import spinal.lib._
  * Single-issue reorder component.
  * Re-orders a continuous stream of instruction results into program order.
  */
-case class SingleReorder(cfg: CobraCfg, ports: Int, width: Int) extends Component {
+case class ScalarReorder(cfg: CobraCfg, ports: Int, width: Int) extends Component {
     val io = new Bundle {
-        // Unordered instruction streams.
+        /** Unordered instruction streams. */
         val din     = Vec.fill(ports)(slave Stream(ExecResult(cfg, width)))
-        // Ordered instruction stream.
+        /** Ordered instruction stream. */
         val dout    = master Stream(ExecResult(cfg, width))
+        /** Order of next instruction to be retired. */
+        val next    = out port UInt(cfg.orderBits bits)
     }
     
     // Next instruction to retire.
@@ -36,6 +38,7 @@ case class SingleReorder(cfg: CobraCfg, ports: Int, width: Int) extends Componen
         next := next + 1
     }
     
+    io.next         := next
     io.dout.valid   := nextMask =/= B(0, ports bits)
     io.dout.payload := io.din.oneHotAccess(nextMask).payload
 }

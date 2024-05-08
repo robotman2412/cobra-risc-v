@@ -22,11 +22,25 @@ case class DecodedInsn(
     val rs2     = UInt(5 bits)
     val rs3     = UInt(5 bits)
     val rd      = UInt(5 bits)
+    // Register source shorthand.
+    def rs(index: Int): UInt = index match {
+        case 0 => rs1
+        case 1 => rs2
+        case 2 => rs3
+        case _ => U"00000"
+    }
     // Register usage.
     val usesRs1 = Bool()
     val usesRs2 = Bool()
     val usesRs3 = Bool()
     val usesRd  = Bool()
+    // Register source usage shorthand.
+    def usesRs(index: Int): Bool = index match {
+        case 0 => usesRs1
+        case 1 => usesRs2
+        case 2 => usesRs3
+        case _ => False
+    }
     // Required execution unit type.
     val exeType = DecodedInsn.ExeType()
     // Decoded immediate value.

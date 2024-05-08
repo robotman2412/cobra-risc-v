@@ -1,16 +1,20 @@
-package cobra.cpu.execution.unit
+package cobra.cpu.execute.unit
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.CobraCfg
-import cobra.cpu.execution._
 import cobra.cpu.decode.DecodedInsn._
+import cobra.cpu.execute._
 import spinal.core._
 import spinal.lib._
 
 
 
 object MUL {
+    object Simple {
+        def factory(cfg: CobraCfg): ExecUnit = MUL.Simple(cfg)
+    }
+    
     /**
      * Simple multiplier implementation.
      */

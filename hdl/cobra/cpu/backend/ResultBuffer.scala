@@ -3,7 +3,7 @@ package cobra.cpu.backend
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
-import cobra.cpu.execution.ExecResult
+import cobra.cpu.execute.ExecResult
 import spinal.core._
 import spinal.lib._
 
