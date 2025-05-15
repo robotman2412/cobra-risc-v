@@ -18,7 +18,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         /** Program memory interface. */
         val ibus    = master port AhbLite3Master(AhbLite3Config(cfg.vaddrWidth, 32))
         /** Instruction TLB interface. */
-        val itlb    = master port VMBus(cfg, false)
+        val itlb    = master port VMBus(cfg, true, false)
         /** Fetched instructions. */
         val dout    = master port Stream(FetchedInsn(cfg))
     }

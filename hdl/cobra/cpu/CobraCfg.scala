@@ -5,6 +5,7 @@ package cobra.cpu
 import cobra.cpu._
 import spinal.core._
 import spinal.lib.bus.amba3.ahblite.AhbLite3Config
+import cobra.cpu.vmem.TLBConfig
 
 
 
@@ -32,32 +33,14 @@ case class CobraISA(
  * Privileged features configuration.
  */
 case class CobraPriv(
-    // Supported privilege modes.
-    S_mode:         Boolean     = true,
-    U_mode:         Boolean     = true,
-    // Supported privileged hardware.
+    /** Number of PMP entries. */
     pmpCount:       Int         = 0,
-    pmpGrain:       Int         = 2,
-    hpm:            Boolean     = false
+    /** Support HPM counters. */
+    hpm:            Boolean     = false,
+    /** Number of ASID bits for virtual memory. */
+    asidLen:        Int         = 12,
 ) {
-    assert(U_mode || !S_mode, "U-mode is required when S-mode is enabled")
     assert(pmpCount == 0 || pmpCount == 16 || pmpCount == 64, "PMP count must be 0, 16 or 64")
-    assert(pmpGrain >= 2, "PMP granularity must be at least 2 bits")
-}
-
-
-
-/**
- * Memory address range.
- */
-case class MemRange(
-    // Base address.
-    val addr: BigInt,
-    // Size in bytes.
-    val size: BigInt
-) {
-    assert(addr % 16 == 0, "Memory range address must be a multiple of 16")
-    assert(size % 16 == 0, "Memory range size must be a multiple of 16")
 }
 
 
@@ -81,42 +64,39 @@ case class CobraCfg(
     /* ==== Pipeline topology ==== */
     /** Merge multiplier and divider into one stage. */
     mergeMulDiv:    Boolean     = false,
-    /** Merge ALU and the memory stages into one stage. */
-    mergeALUMem:    Boolean     = false,
-    
-    /* ==== Tuning parameters ==== */
-    /** Multiplier delay / latency. */
+    /** Multiplier latency. */
     mulLatency:     Int         = 2,
-    /** Use a pipelined multiplier instead of a cyclic one. */
-    mulPipelined:   Boolean     = false,
-    /** Divider delay / latency. */
+    /** Divider latency. */
     divLatency:     Int         = 6,
-    /** Use a pipelined divider instead of a cyclic one. */
-    divPipelined:   Boolean     = false,
+    
+    /* ==== Cache parameters ==== */
+    /** L1 ITLB configuration. */
+    l1ITLB:         TLBConfig   = TLBConfig(32, 4),
+    /** L1 DTLB configuration. */
+    l1DTLB:         TLBConfig   = TLBConfig(32, 4),
+    /** L2 TLB configuration. */
+    l2TLB:          TLBConfig   = TLBConfig(32, 16),
     
     /* ==== Miscellaneous ==== */
     /** Entrypoint address at reset. */
     entrypoint:     BigInt      = 0x10000000l,
 ) {
-    assert(priv.pmpGrain < paddrWidth, "PMP granularity must be less then address width")
     if (isa.RV64) {
         assert(paddrWidth <= 56, "Maximum supported RV64 physical address width is 56")
-    } else if (priv.S_mode) {
-        assert(paddrWidth <= 34, "Maximum supported RV32 with S-mode physical address width is 34")
     } else {
-        assert(paddrWidth <= 32, "Maximum supported RV32 without S-mode physical address width is 32")
+        assert(paddrWidth <= 34, "Maximum supported RV32 physical address width is 34")
     }
     assert(paddrWidth >= 16, "Minimum supported physical address width is 16")
     /** Width of integer registers and CSRs. */
     val XLEN        = isa.XLEN
     /** Width of floating-point registers. */
     val FLEN        = isa.FLEN
-    /** Number of bits required to uniquely represent in-flight instruction ordering. */
-    val orderBits   = 4
     /** Derived maximum virtual address width. */
-    val vaddrWidth  = if (!priv.S_mode) paddrWidth else if (isa.RV64) 56 else 32
+    val vaddrWidth  = if (isa.RV64) 56 else 32
     /** Derived maximum virtual page number width. */
-    val vpnWidth    = if (!priv.S_mode) paddrWidth-12 else if (isa.RV64) 45 else 20
+    val vpnWidth    = if (isa.RV64) 45 else 20
     /** Derived maximum physical page number width. */
-    val ppnWidth    = if (!priv.S_mode) paddrWidth-12 else if (isa.RV64) 44 else 22
+    val ppnWidth    = if (isa.RV64) 44 else 22
+    /** Number vpn bits used per page table level. */
+    val pageBits    = if (isa.RV64)  9 else 10
 }

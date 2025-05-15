@@ -39,7 +39,7 @@ case class RegWrite(width: Int) extends Bundle with IMasterSlave {
 /**
  * Parametric register file.
  */
-case class Regfile(cfg: CobraCfg, width: Int, wports: Int = 1, rports: Int = 2) extends Component {
+case class Regfile(cfg: CobraCfg, width: Int, wports: Int = 2, rports: Int = 4) extends Component {
     val io = new Bundle {
         val write = Vec.fill(wports)(slave(RegWrite(width)))
         val read  = Vec.fill(rports)(slave(RegRead(width)))

@@ -9,40 +9,41 @@ import spinal.lib._
 
 
 /**
- * Stub implementation of virtual VMBus for systems without vmem.
+ * Page translation and protection value.
  */
-case class VMStub(cfg: CobraCfg, isData: Boolean) extends Component {
-    val io = new Bundle {
-        val bus = VMBus(cfg, isData)
-    }
-    val ppnReg = Reg(UInt(cfg.ppnWidth bits))
-    ppnReg := io.bus.vpn
-    io.bus.ppn := ppnReg
-    io.bus.trap := False
-    io.bus.cause.assignDontCare()
+case class VMPageData(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends Bundle {
+    /** PMP read permission. */
+    val pmpR = isData generate Bool()
+    /** PMP write permission. */
+    val pmpW = isData generate Bool()
+    /** PMP execute permission. */
+    val pmpX = isCode generate Bool()
+    
+    /** PTE read permission. */
+    val pteR = isData generate Bool()
+    /** PTE write permission. */
+    val pteW = isData generate Bool()
+    /** PTE execute permission. */
+    val pteX = isCode generate Bool()
+    
+    /** Physical page number. */
+    val ppn   = UInt(cfg.ppnWidth bits)
 }
 
 /**
  * Virtual memory bus for TLBs and page table walkers.
  * Access latency: 1
  */
-case class VMBus(cfg: CobraCfg, isData: Boolean) extends Bundle with IMasterSlave {
+case class VMBus(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends Bundle with IMasterSlave {
+    /** Query enable. */
+    val query   = Bool()
     /** Virtual page number to access. */
     val vpn     = UInt(cfg.vpnWidth bits)
-    /** Read access. */
-    val r       = isData generate Bool()
-    /** Write access. */
-    val w       = isData generate Bool()
-    /** Execute access. */
-    val x       = !isData generate Bool()
-    
-    /** Physical page number of the access. */
-    val ppn     = UInt(cfg.ppnWidth bits)
-    /** Page trap raised. */
-    val trap    = Bool()
-    /** Trap cause. */
-    val cause   = UInt(4 bits)
+    /** Response available. */
+    val ready   = Bool()
+    /** Translation response. */
+    val resp    = VMPageData(cfg, isCode, isData)
     
     /** Signals from master (CPU) perspective. */
-    def asMaster() = { out(vpn, r, w, x); in(ppn, trap, cause) }
+    def asMaster() = { out(query, vpn); in(ready, resp) }
 }
