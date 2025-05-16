@@ -3,7 +3,6 @@ package cobra.cpu
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu.decode._
-import cobra.cpu.execute._
 import cobra.cpu.fetch._
 import cobra.cpu.regfile._
 import spinal.core._

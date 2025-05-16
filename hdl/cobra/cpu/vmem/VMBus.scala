@@ -11,20 +11,23 @@ import spinal.lib._
 /**
  * Page translation and protection value.
  */
-case class VMPageData(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends Bundle {
+case class VMPageData(cfg: CobraCfg, r: Boolean, w: Boolean, x: Boolean) extends Bundle {
+    /** Whether paging is enabled for this entry. */
+    val paged = Bool()
+    
     /** PMP read permission. */
-    val pmpR = isData generate Bool()
+    val pmpR = r generate Bool()
     /** PMP write permission. */
-    val pmpW = isData generate Bool()
+    val pmpW = w generate Bool()
     /** PMP execute permission. */
-    val pmpX = isCode generate Bool()
+    val pmpX = x generate Bool()
     
     /** PTE read permission. */
-    val pteR = isData generate Bool()
+    val pteR = r generate Bool()
     /** PTE write permission. */
-    val pteW = isData generate Bool()
+    val pteW = w generate Bool()
     /** PTE execute permission. */
-    val pteX = isCode generate Bool()
+    val pteX = x generate Bool()
     
     /** Physical page number. */
     val ppn   = UInt(cfg.ppnWidth bits)
@@ -32,6 +35,8 @@ case class VMPageData(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends B
 
 /**
  * Virtual memory bus for TLBs and page table walkers.
+ * The TLB or page walker must respond with the initial request before fetching data for the next request.
+ * As such, the CPU or lower-level TLB must internally keep track of the previous request to match, and stall the next while `ready` is 0.
  * Access latency: 1
  */
 case class VMBus(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends Bundle with IMasterSlave {
@@ -42,7 +47,7 @@ case class VMBus(cfg: CobraCfg, isCode: Boolean, isData: Boolean) extends Bundle
     /** Response available. */
     val ready   = Bool()
     /** Translation response. */
-    val resp    = VMPageData(cfg, isCode, isData)
+    val resp    = VMPageData(cfg, isData, isData, isCode)
     
     /** Signals from master (CPU) perspective. */
     def asMaster() = { out(query, vpn); in(ready, resp) }

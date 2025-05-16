@@ -56,9 +56,9 @@ case class FetchTB(cfg: CobraCfg) extends Component {
     
     // Testbench logic.
     fetch.io.ibus.toAhbLite3 <> irom.io.ahb
-    fetch.io.itlb.ppn.assignDontCare()
-    fetch.io.itlb.trap.assignDontCare()
-    fetch.io.itlb.cause.assignDontCare()
+    // fetch.io.itlb.ppn.assignDontCare()
+    // fetch.io.itlb.trap.assignDontCare()
+    // fetch.io.itlb.cause.assignDontCare()
     fetch.io.dout.ready := !io.done
     val counter = RegInit(U(0, 32 bits))
     when (fetch.io.dout.valid && !io.done) {

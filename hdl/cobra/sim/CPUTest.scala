@@ -5,7 +5,6 @@ package cobra.sim
 import cobra._
 import cobra.cpu._
 import cobra.cpu.backend._
-import cobra.cpu.execute._
 import spinal.core._
 import spinal.core.sim._
 import spinal.lib._
