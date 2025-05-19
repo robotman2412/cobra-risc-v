@@ -1,4 +1,4 @@
-package cobra.cpu.regfile
+package cobra.cpu.misc
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
@@ -54,7 +54,7 @@ case class Regfile(cfg: CobraCfg, width: Int, wports: Int = 2, rports: Int = 4) 
         }
     }
     for (port <- io.read) {
-        port.data  := storage.readAsync(port.regno)
+        port.data  := storage.readAsync(port.regno, writeFirst)
         port.stale := False
     }
     

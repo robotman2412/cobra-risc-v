@@ -4,9 +4,9 @@ package cobra.sim
 
 import cobra._
 import cobra.cpu._
-import cobra.cpu.regfile._
 import spinal.core._
 import spinal.core.sim._
+import cobra.cpu.misc.Regfile
 
 object RegTest extends App {
     Config.sim.compile(Regfile(CobraCfg(), 32)).doSim(this.getClass.getSimpleName) { dut =>

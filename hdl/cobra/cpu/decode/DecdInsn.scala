@@ -3,7 +3,7 @@ package cobra.cpu.decode
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
-import cobra.cpu.decode.DecodedInsn.ExeType
+import cobra.cpu.decode.DecdInsn.ExecType
 import spinal.core._
 
 
@@ -11,7 +11,7 @@ import spinal.core._
 /**
  * Decoded instruction data.
  */
-case class DecodedInsn(
+case class DecdInsn(
     val hasMem: Boolean = true,
     val hasAlu: Boolean = true,
     val hasMul: Boolean = true,
@@ -42,37 +42,35 @@ case class DecodedInsn(
         case _ => False
     }
     // Required execution unit type.
-    val exeType = DecodedInsn.ExeType()
+    val execType = DecdInsn.ExecType()
     // Decoded immediate value.
-    val imm     = SInt(32 bits)
-    // Decoded branch offset.
-    val branch  = SInt(32 bits)
+    val imm      = SInt(32 bits)
     // Float operation size.
-    val fpSize  = UInt(2 bits)
+    val fpSize   = UInt(2 bits)
     // Memory access control signals.
-    val mem     = hasMem generate DecodedInsn.Mem()
+    val mem      = hasMem generate DecdInsn.Mem()
     // Perform 32-bit integer operation.
-    val op32    = Bool()
+    val op32     = Bool()
     // ALU control signals.
-    val alu     = hasAlu generate DecodedInsn.ALU()
+    val alu      = hasAlu generate DecdInsn.ALU()
     // Multiplier control signals.
-    val mul     = hasMul generate DecodedInsn.Mul()
+    val mul      = hasMul generate DecdInsn.Mul()
     // Divider control signals.
-    val div     = hasDiv generate DecodedInsn.Div()
+    val div      = hasDiv generate DecdInsn.Div()
 }
 
-object DecodedInsn {
+object DecdInsn {
     /** Generate DecodedInsn from capabilities list. */
-    def apply(capabilities: Seq[SpinalEnumElement[ExeType.type]]): DecodedInsn = {
-        return DecodedInsn(
-            capabilities.contains(ExeType.MEM),
-            capabilities.contains(ExeType.ALU),
-            capabilities.contains(ExeType.MUL),
-            capabilities.contains(ExeType.DIV)
+    def apply(capabilities: Seq[SpinalEnumElement[ExecType.type]]): DecdInsn = {
+        return DecdInsn(
+            capabilities.contains(ExecType.MEM),
+            capabilities.contains(ExecType.ALU),
+            capabilities.contains(ExecType.MUL),
+            capabilities.contains(ExecType.DIV)
         )
     }
     /** Required execution unit type. */
-    object ExeType extends SpinalEnum {
+    object ExecType extends SpinalEnum {
         val MEM, ALU, MUL, DIV = newElement()
     }
     /** Memory access control signals. */
@@ -100,7 +98,7 @@ object DecodedInsn {
         val shiftRight  = Bool()
         val arithShift  = Bool()
         val bitMux      = BitMux()
-        val mux         = DecodedInsn.ALUMux()
+        val mux         = DecdInsn.ALUMux()
     }
     /** Multiplier control signals. */
     case class Mul() extends Bundle {
