@@ -5,7 +5,7 @@ package cobra.cpu
 import cobra.cpu.decode._
 import cobra.cpu.execute._
 import cobra.cpu.fetch._
-import cobra.cpu.regfile._
+import cobra.cpu.misc._
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.amba3.ahblite._
