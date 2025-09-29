@@ -7,6 +7,7 @@ import cobra.cpu.vmem._
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.amba3.ahblite._
+import cobra.Riscv
 
 
 
@@ -128,17 +129,16 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         val pc1  = if (cfg.isa.C) RegInit(Bool((cfg.entrypoint & 1) != 0)) else False
         
         /** Incoming instruction is 32-bit. */
-        val is32 = if (cfg.isa.C) Bool() else True
-        if (cfg.isa.C) {
-            when (pc1) {
-                is32 := bufStr.payload(0).raw(17 downto 16) === M"11"
-            } otherwise {
-                is32 := bufStr.payload(0).raw( 1 downto  0) === M"11"
-            }
+        val is32 =  Bool() 
+        when (pc1) {
+            is32 := bufStr.payload(0).raw(17 downto 16) === M"11"
+        } otherwise {
+            is32 := bufStr.payload(0).raw( 1 downto  0) === M"11"
         }
+        val do32 = if (cfg.isa.C) is32 else True
         
         // Recombination logic.
-        when (!is32) {
+        when (!do32) {
             // 16-bit instruction.
             io.dout.payload.addr                := bufStr.payload(0).addr
             io.dout.payload.addr(1)             := pc1
@@ -172,6 +172,13 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
             io.dout.payload.trap                := False
             io.dout.payload.cause.assignDontCare()
         }
+        if (!cfg.isa.C) {
+            // 16-bit instruction with C extension disabled.
+            when (!is32) {
+                io.dout.payload.trap  := True
+                io.dout.payload.cause := Riscv.TRAP_IALIGN.asUInt(false)
+            }
+        }
         
         // Stream logic.
         io.dout.valid := bufStr.valid && !branchTrig
@@ -184,7 +191,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
             bufStr.ready.assignDontCare()
         } elsewhen (!io.dout.ready) {
             bufStr.ready := False
-        } elsewhen (is32) {
+        } elsewhen (do32) {
             bufStr.ready := True
         } otherwise {
             bufStr.ready := pc1

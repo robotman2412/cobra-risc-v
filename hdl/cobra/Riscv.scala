@@ -76,4 +76,22 @@ object Riscv {
     val ALU_SRL             = M"101"
     val ALU_OR              = M"110"
     val ALU_AND             = M"111"
+    
+    // Trap causes.
+    val TRAP_IALIGN         = M"0000"
+    val TRAP_IACCESS        = M"0001"
+    val TRAP_IILLEGAL       = M"0010"
+    val TRAP_EBREAK         = M"0011"
+    val TRAP_LALIGN         = M"0100"
+    val TRAP_LACCESS        = M"0101"
+    val TRAP_SALIGN         = M"0110"
+    val TRAP_SACCESS        = M"0111"
+    val TRAP_ECALL_U        = M"1000"
+    val TRAP_ECALL_S        = M"1001"
+    //  TRAP_reserved       = M"1010"
+    val TRAP_ECALL_M        = M"1011"
+    val TRAP_IPAGE          = M"1100"
+    val TRAP_LPAGE          = M"1101"
+    //  TRAP_reserved       = M"1110"
+    val TRAP_SPAGE          = M"1111"
 }
