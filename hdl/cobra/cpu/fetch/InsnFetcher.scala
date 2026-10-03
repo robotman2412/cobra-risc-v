@@ -3,7 +3,7 @@ package cobra.cpu.fetch
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 
 import cobra.cpu._
-import cobra.cpu.vmem._
+import cobra.cpu.mem._
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.amba3.ahblite._

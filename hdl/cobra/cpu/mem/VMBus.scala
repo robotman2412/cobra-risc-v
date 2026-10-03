@@ -1,4 +1,4 @@
-package cobra.cpu.vmem
+package cobra.cpu.mem
 
 // Copyright © 2024, Julian Scheffers, see LICENSE for info
 

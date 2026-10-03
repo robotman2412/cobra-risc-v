@@ -5,7 +5,7 @@ package cobra.cpu
 import cobra.cpu._
 import spinal.core._
 import spinal.lib.bus.amba3.ahblite.AhbLite3Config
-import cobra.cpu.vmem.TLBConfig
+import cobra.cpu.mem.TLBConfig
 
 
 
