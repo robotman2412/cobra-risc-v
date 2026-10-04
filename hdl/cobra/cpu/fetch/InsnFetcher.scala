@@ -26,11 +26,9 @@ import spinal.lib.bus.amba3.ahblite._
 case class InsnFetcher(cfg: CobraCfg) extends Component {
     val io = new Bundle {
         /** Program memory interface. */
-        val ibus        = master port IntMemBus(cfg, false)
-        /** First fetched instruction. */
-        val dout0       = master port Stream(FetchedInsn(cfg))
-        /** Second fetched instruction. */
-        val dout1       = master port Stream(FetchedInsn(cfg))
+        val ibus    = master port IntMemBus(cfg, false)
+        /** Fetched instructions. */
+        val dout    = Vec.fill(2)(master port Stream(FetchedInsn(cfg)))
     }
     
     /** How much to consume this cycle. */
@@ -45,11 +43,11 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** A fetch cycle is in progress. */
     val writeActive     = RegInit(False)
     /** Ringbuffer read index in 16-bit increments. */
-    val readIndex       = RegInit(U(0, 3 bits))
+    val readIndex       = RegInit(U((cfg.entrypoint >> 1) & 3, 3 bits))
     /** Trigger a new fetch cycle. */
     val fetchTrigger    = Bool()
     /** Next address to fetch from. */
-    val pc              = RegInit(U(cfg.entrypoint, cfg.XLEN bits))
+    val pc              = RegInit(U(cfg.entrypoint & ~7l, cfg.XLEN bits))
     
     /** Fetch packet ringbuffer with forwarding. */
     val fetchPacket     = Vec.fill(2)(FetchPacket(cfg))
@@ -109,9 +107,51 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     }
     
     /* ==== SECOND STAGE: OUTPUT MULTIPLEXERS ==== */
+    
+    /** Instruction data laid out as a single ring buffer. */
+    val flatRing    = Vec.fill(8)(Bits(16 bits))
+    /** Start index of the instructions within `flatRing`. */
+    val insnStart   = Vec.fill(2)(UInt(3 bits))
+    /** Whether the instructions are 32-bit. */
+    val isLong      = Vec.fill(2)(Bool())   // Bits(2 bits) would generate a combinatorial loop error.
+    
     consume := U(0)
-    io.dout0.valid := False
-    io.dout0.payload.assignDontCare
-    io.dout1.valid := False
-    io.dout1.payload.assignDontCare
+    io.dout(0).valid := False
+    io.dout(0).payload.assignDontCare
+    io.dout(1).valid := False
+    io.dout(1).payload.assignDontCare
+    
+    for (i <- 0 until 4) {
+        flatRing(i)   := fetchPacket(0).data(i*16+15 downto i*16)
+        flatRing(i+4) := fetchPacket(1).data(i*16+15 downto i*16)
+    }
+    
+    // Instuction extraction.
+    insnStart(0)    := readIndex;
+    insnStart(1)    := readIndex + isLong(0).asUInt.resized + U(1)
+    for (i <- 0 until 2) {
+        isLong(i)   := flatRing(insnStart(i))(1 downto 0) === B"11"
+        io.dout(i).payload.raw(15 downto 0)  := flatRing(insnStart(i))
+        io.dout(i).payload.raw(31 downto 16) := flatRing(insnStart(i) + 1)
+        when (!isLong(i)) {
+            io.dout(i).payload.raw(31 downto 16) := B(0)
+        }
+    }
+    
+    // Instruction address/trap logic.
+    for (i <- 0 until 2) {
+        val spansPackets = isLong(i) && insnStart(i) === M"-11"
+        val firstPacket = insnStart(i)(2).asUInt
+        io.dout(i).payload.addr             := fetchPacket(firstPacket).addr
+        io.dout(i).payload.addr(2 downto 1) := insnStart(i)(1 downto 0)
+        io.dout(i).payload.trap             := fetchPacket(firstPacket).trap
+        io.dout(i).payload.cause            := fetchPacket(firstPacket).cause
+        when (spansPackets && !fetchPacket(firstPacket).trap && fetchPacket(~firstPacket).trap) {
+            // Traps on second half of instruction.
+            io.dout(i).payload.trap     := True
+            io.dout(i).payload.cause    := fetchPacket(~firstPacket).cause
+            io.dout(i).payload.addr     := fetchPacket(~firstPacket).addr
+        }
+        io.dout(i).payload.addr(0) := False
+    }
 }

@@ -82,12 +82,12 @@ case class FetchTB(cfg: CobraCfg) extends Component {
         fetch.io.ibus.rdata.assignDontCare()
         fetch.io.ibus.ready := False
     }
-    fetch.io.dout0.ready := !io.done
-    fetch.io.dout1.ready := !io.done
+    fetch.io.dout(0).ready := !io.done
+    fetch.io.dout(1).ready := !io.done
     val counter = RegInit(U(0, 32 bits))
-    when (fetch.io.dout1.fire && !io.done) {
+    when (fetch.io.dout(1).fire && !io.done) {
         counter := counter + 2
-    } elsewhen (fetch.io.dout0.fire && !io.done) {
+    } elsewhen (fetch.io.dout(0).fire && !io.done) {
         counter := counter + 1
     }
     io.done := counter >= expected.length
