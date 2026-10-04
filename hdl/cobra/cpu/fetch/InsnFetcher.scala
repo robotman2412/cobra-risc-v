@@ -11,7 +11,7 @@ import spinal.lib.bus.amba3.ahblite._
 
 /**
  * Instruction fetching pipeline.
- * `dout1` is never valid if `dout2` is not valid, and `dout1` must not be ready if `dout2` is not ready but is valid.
+ * `dout(1)` is never valid if `dout(2)` is not valid, and `dout(1)` must not be ready if `dout(2)` is not ready but is valid.
  * 
  * The fetch unit works in two stages:
  * - A 128-bit ringbuffer containing fetch packets.
