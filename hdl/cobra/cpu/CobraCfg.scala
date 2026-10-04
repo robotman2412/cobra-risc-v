@@ -22,25 +22,10 @@ case class CobraISA(
     D:              Boolean     = false,
     C:              Boolean     = false
 ) {
+    assert(RV64 || !D, "RVD without RV64 is unsupported")
     assert(F || !D, "F is required when D is enabled")
     val XLEN = if (RV64) 64 else 32
     val FLEN = if (D) 64 else 32
-}
-
-
-
-/**
- * Privileged features configuration.
- */
-case class CobraPriv(
-    /** Number of PMP entries. */
-    pmpCount:       Int         = 0,
-    /** Support HPM counters. */
-    hpm:            Boolean     = false,
-    /** Number of ASID bits for virtual memory. */
-    asidLen:        Int         = 12,
-) {
-    assert(pmpCount == 0 || pmpCount == 16 || pmpCount == 64, "PMP count must be 0, 16 or 64")
 }
 
 
@@ -52,8 +37,14 @@ case class CobraCfg(
     /* ==== Supported RISC-V features ==== */
     /** Supported instruction sets. */
     isa:            CobraISA    = ISA"RV64GC",
-    /** Supported privileged features. */
-    priv:           CobraPriv   = CobraPriv(),
+    /** Number of paging levels. */
+    pagingLevels:   Int         = 3,
+    /** Number of ASID bits for virtual memory. */
+    asidLen:        Int         = 8,
+    /** Number of PMP entries. */
+    pmpCount:       Int         = 0,
+    /** Support HPM counters. */
+    hpm:            Boolean     = false,
     
     /* ==== I/O parameters ==== */
     /** Maximum physical address width. */
@@ -81,22 +72,27 @@ case class CobraCfg(
     /** Entrypoint address at reset. */
     entrypoint:     BigInt      = 0x10000000l,
 ) {
+    assert(pmpCount == 0 || pmpCount == 16 || pmpCount == 64, "PMP count must be 0, 16 or 64")
     if (isa.RV64) {
         assert(paddrWidth <= 56, "Maximum supported RV64 physical address width is 56")
+        assert(asidLen <= 16, "Maximum supported RV64 ASIDLEN is 16")
+        assert(pagingLevels >= 3 && pagingLevels <= 5, "RV64 paging levels must be from 3 to 5 inclusive")
     } else {
-        assert(paddrWidth <= 34, "Maximum supported RV32 physical address width is 34")
+        assert(paddrWidth <= 32, "Maximum supported RV32 physical address width is 32")
+        assert(asidLen <= 9, "Maximum supported RV32 ASIDLEN is 9")
+        assert(pagingLevels == 2, "RV32 paging levels must be exactly 2")
     }
     assert(paddrWidth >= 16, "Minimum supported physical address width is 16")
     /** Width of integer registers and CSRs. */
-    val XLEN        = isa.XLEN
+    val XLEN            = isa.XLEN
     /** Width of floating-point registers. */
-    val FLEN        = isa.FLEN
-    /** Derived maximum virtual address width. */
-    val vaddrWidth  = if (isa.RV64) 56 else 32
-    /** Derived maximum virtual page number width. */
-    val vpnWidth    = if (isa.RV64) 45 else 20
-    /** Derived maximum physical page number width. */
-    val ppnWidth    = if (isa.RV64) 44 else 22
+    val FLEN            = isa.FLEN
     /** Number vpn bits used per page table level. */
-    val pageBits    = if (isa.RV64)  9 else 10
+    val bitsPerPTLevel  = if (isa.RV64)  9 else 10
+    /** Derived maximum virtual address width. */
+    val vaddrWidth      = 12 + bitsPerPTLevel * pagingLevels
+    /** Derived maximum virtual page number width. */
+    val vpnWidth        = vaddrWidth - 12
+    /** Derived maximum physical page number width. */
+    val ppnWidth        = paddrWidth - 12
 }

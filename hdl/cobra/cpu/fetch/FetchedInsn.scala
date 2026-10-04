@@ -9,7 +9,7 @@ import spinal.core._
 
 case class FetchedInsn(cfg: CobraCfg) extends Bundle {
     /** Instruction base address / trapping part address. */
-    val addr    = UInt(cfg.vaddrWidth bits)
+    val addr    = UInt(cfg.XLEN bits)
     /** Raw instruction bits. */
     val raw     = Bits(32 bits)
     /** Trap raised. */

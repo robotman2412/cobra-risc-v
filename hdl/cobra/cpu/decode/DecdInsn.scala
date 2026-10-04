@@ -75,10 +75,18 @@ object DecdInsn {
     }
     /** Memory access control signals. */
     case class Mem() extends Bundle {
+        /** Log-base 2 of the access size in bytes. */
         val asize       = UInt(2 bits)
+        /** Sign-extend read data to XLEN. */
         val signed      = Bool()
+        /** Perform a read cycle. */
         val re          = Bool()
+        /** Perform a write cycle. */
         val we          = Bool()
+        /** Create a bus lock on the affected address range on read, and release on write. */
+        val locked      = Bool()
+        /** If `locked`, us a weak bus lock as done by `lr` and `sc`. */
+        val weakLock    = Bool()
     }
     /** ALU output selection. */
     object ALUMux extends SpinalEnum {
@@ -98,7 +106,7 @@ object DecdInsn {
         val shiftRight  = Bool()
         val arithShift  = Bool()
         val bitMux      = BitMux()
-        val mux         = DecdInsn.ALUMux()
+        val mux         = ALUMux()
     }
     /** Multiplier control signals. */
     case class Mul() extends Bundle {
