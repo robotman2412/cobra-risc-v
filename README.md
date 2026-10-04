@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2024-2026 Julian Scheffers -->
+<!-- SPDX-License-Identifier: CERN-OHL-P-2.0 -->
+
 # Cobra RISC-V
 
 Cobra aims to be a Linux-capable CPU supporting the `RV64IMAFDC_Zicsr_Zifencei` extensions and virtal memory.

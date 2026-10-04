@@ -1,5 +1,6 @@
 
-# Copyright © 2024, Julian Scheffers, see LICENSE for info
+# Copyright (c) 2024-2026 Julian Scheffers
+# SPDX-License-Identifier: CERN-OHL-P-2.0
 
 .PHONY: all cmod vhdl sim wave clean
 

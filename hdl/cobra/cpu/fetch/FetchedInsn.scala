@@ -1,6 +1,7 @@
 package cobra.cpu.fetch
 
-// Copyright © 2024, Julian Scheffers, see LICENSE for info
+// Copyright (c) 2024-2026 Julian Scheffers
+// SPDX-License-Identifier: CERN-OHL-P-2.0
 
 import cobra.cpu._
 import spinal.core._
