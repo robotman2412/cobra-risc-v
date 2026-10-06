@@ -8,6 +8,7 @@ import cobra.cpu.mem._
 import spinal.core._
 import spinal.lib._
 import spinal.lib.bus.amba3.ahblite._
+import cobra.Riscv
 
 /**
  * Instruction fetching pipeline.
@@ -42,12 +43,14 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     val writeIndex      = RegInit(U(0, 1 bits))
     /** A fetch cycle is in progress. */
     val writeActive     = RegInit(False)
+    /** Program counter of pending fetch is non-canonical (RV64 only). */
+    val writeNonCanon   = RegInit(False)
     /** Ringbuffer read index in 16-bit increments. */
     val readIndex       = RegInit(U((cfg.entrypoint >> 1) & 3, 3 bits))
     /** Trigger a new fetch cycle. */
     val fetchTrigger    = Bool()
     /** Next address to fetch from. */
-    val pc              = RegInit(U(cfg.entrypoint & ~7l, cfg.XLEN bits))
+    val pc              = RegInit(S(cfg.entrypoint & ~7l, cfg.badVaddrWidth bits))
     
     /** Fetch packet ringbuffer with forwarding. */
     val fetchPacket     = Vec.fill(2)(FetchPacket(cfg))
@@ -64,7 +67,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     io.ibus.exec    := True
     io.ibus.priv    := U"11" // TODO.
     io.ibus.pgEn    := False // TODO.
-    io.ibus.addr    := pc
+    io.ibus.addr    := pc(cfg.vaddrWidth-1 downto 0)
     io.ibus.asize   := U(3)
     
     // Memory response receiver.
@@ -74,18 +77,25 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
             writeActive := False
         }
         fetchPacket(~writeIndex).data   := io.ibus.rdata
-        fetchPacket(~writeIndex).trap   := io.ibus.trap
-        fetchPacket(~writeIndex).cause  := io.ibus.cause
+        when (writeNonCanon) {
+            fetchPacket(~writeIndex).trap   := True
+            fetchPacket(~writeIndex).cause  := Riscv.CAUSE_IACCESS // TODO: Change to CAUSE_IPAGE if pgEn.
+        } otherwise {
+            fetchPacket(~writeIndex).trap   := io.ibus.trap
+            fetchPacket(~writeIndex).cause  := io.ibus.cause
+        }
     }
     
     // Memory request driver.
     when (fetchTrigger) {
         // (Re-)trigger fetch cycle.
-        io.ibus.enable  := True
+        val nonCanon     = if (cfg.isa.RV64) pc(cfg.badVaddrWidth-1) =/= pc(cfg.vaddrWidth-1) else False
+        io.ibus.enable  := !nonCanon
         when (io.ibus.ready) {
+            writeNonCanon   := nonCanon
             writeActive     := True
             writeIndex      := ~writeIndex
-            pc              := pc + U(8)
+            pc              := pc + S(8)
             fetchPacketBuf(writeIndex).addr := pc
         }
     }
@@ -151,7 +161,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         val spansPackets = isLong(i) && insnStart(i) === M"-11"
         val firstPacket = insnStart(i)(2).asUInt
         io.dout(i).payload.addr             := fetchPacket(firstPacket).addr
-        io.dout(i).payload.addr(2 downto 1) := insnStart(i)(1 downto 0)
+        io.dout(i).payload.addr(2 downto 1) := insnStart(i)(1 downto 0).asSInt
         io.dout(i).payload.trap             := fetchPacket(firstPacket).trap
         io.dout(i).payload.cause            := fetchPacket(firstPacket).cause
         when (spansPackets && !fetchPacket(firstPacket).trap && fetchPacket(~firstPacket).trap) {

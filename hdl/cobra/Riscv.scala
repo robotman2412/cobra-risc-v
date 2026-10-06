@@ -79,21 +79,21 @@ object Riscv {
     def ALU_AND             = B"111"
     
     // Trap cause values.
-    def CAUSE_IALIGN        = U(0)
-    def CAUSE_IACCESS       = U(1)
-    def CAUSE_IILLEGAL      = U(2)
-    def CAUSE_BREAK         = U(3)
-    def CAUSE_LALIGN        = U(4)
-    def CAUSE_LACCESS       = U(5)
-    def CAUSE_SALIGN        = U(6)
-    def CAUSE_SACCESS       = U(7)
-    def CAUSE_ECALL_U       = U(8)
-    def CAUSE_ECALL_S       = U(9)
-    def CAUSE_ECALL_M       = U(11)
-    def CAUSE_IPAGE         = U(12)
-    def CAUSE_LPAGE         = U(13)
-    def CAUSE_SPAGE         = U(15)
-    def CAUSE_DOUBLETRAP    = U(16)
-    def CAUSE_SWCHECK       = U(18)
-    def CAUSE_HWERR         = U(19)
+    def CAUSE_IALIGN        = U(0).resized
+    def CAUSE_IACCESS       = U(1).resized
+    def CAUSE_IILLEGAL      = U(2).resized
+    def CAUSE_BREAK         = U(3).resized
+    def CAUSE_LALIGN        = U(4).resized
+    def CAUSE_LACCESS       = U(5).resized
+    def CAUSE_SALIGN        = U(6).resized
+    def CAUSE_SACCESS       = U(7).resized
+    def CAUSE_ECALL_U       = U(8).resized
+    def CAUSE_ECALL_S       = U(9).resized
+    def CAUSE_ECALL_M       = U(11).resized
+    def CAUSE_IPAGE         = U(12).resized
+    def CAUSE_LPAGE         = U(13).resized
+    def CAUSE_SPAGE         = U(15).resized
+    def CAUSE_DOUBLETRAP    = U(16).resized
+    def CAUSE_SWCHECK       = U(18).resized
+    def CAUSE_HWERR         = U(19).resized
 }

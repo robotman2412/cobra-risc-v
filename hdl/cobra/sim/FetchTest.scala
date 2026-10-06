@@ -87,7 +87,7 @@ case class FetchTB(cfg: CobraCfg) extends Component {
     }
     fetch.io.dout(0).ready := !io.done
     fetch.io.dout(1).ready := !io.done
-    val counter = RegInit(U(0, 32 bits))
+    val counter = RegInit(U(0, cfg.vaddrWidth bits))
     when (fetch.io.dout(1).fire && !io.done) {
         counter := counter + 2
     } elsewhen (fetch.io.dout(0).fire && !io.done) {
@@ -97,7 +97,7 @@ case class FetchTB(cfg: CobraCfg) extends Component {
 }
 
 object FetchTest extends App {
-    Config.sim.compile(FetchTB(CobraCfg(ISA"RV32I", 2, entrypoint=0))).doSim(this.getClass.getSimpleName) { dut =>
+    Config.sim.compile(FetchTB(CobraCfg(ISA"RV64I", entrypoint=0))).doSim(this.getClass.getSimpleName) { dut =>
         dut.io.stall #= false
         
         // Fork a process to generate the reset and the clock on the dut

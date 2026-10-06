@@ -26,7 +26,7 @@ case class IntMemBus(cfg: CobraCfg, isData: Boolean) extends Bundle with IMaster
     /** Represents whether paging is enabled in SATP.MODE; false for BARE, true otherwise. */
     val pgEn   = Bool()
     /** Memory address; virtual if `priv` encodes S-mode or below and `pgEn` is true; otherwise, physical. */
-    val addr   = UInt(cfg.XLEN bits)
+    val addr   = SInt(cfg.vaddrWidth bits)
     /** Write data; if `write` is true, access shall write this to memory. */
     val wdata  = isData generate Bits(dataWidth bits)
     /** Log-base 2 of the access size in bytes. */
@@ -49,8 +49,8 @@ case class IntMemBus(cfg: CobraCfg, isData: Boolean) extends Bundle with IMaster
     
     /** Adapt this bus directly to AHB. */
     def toAhb3Master(): AhbLite3Master = {
-        val that = AhbLite3Master(AhbLite3Config(cfg.XLEN, dataWidth))
-        that.HADDR := this.addr
+        val that = AhbLite3Master(AhbLite3Config(cfg.vaddrWidth, dataWidth))
+        that.HADDR := this.addr.asUInt
         when (this.enable) {
             that.HTRANS := AhbLite3.NONSEQ
         } otherwise {

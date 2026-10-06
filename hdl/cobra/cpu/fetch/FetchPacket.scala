@@ -9,7 +9,7 @@ import spinal.core._
 import spinal.lib._
 
 case class FetchPacket(cfg: CobraCfg) extends Bundle {
-    val addr    = UInt(cfg.XLEN bits)
+    val addr    = SInt(cfg.badVaddrWidth bits)
     val data    = Bits(64 bits)
     val trap    = Bool()
     val cause   = UInt(4 bits)

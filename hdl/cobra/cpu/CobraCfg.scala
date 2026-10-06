@@ -94,6 +94,8 @@ case class CobraCfg(
     val bitsPerPTLevel  = if (isa.RV64)  9 else 10
     /** Derived maximum virtual address width. */
     val vaddrWidth      = 12 + bitsPerPTLevel * pagingLevels
+    /** Minimum amount of bits needed to represent all possible addresses, including possibly invalid ones. */
+    val badVaddrWidth   = if (isa.RV64) vaddrWidth+1 else 32
     /** Derived maximum virtual page number width. */
     val vpnWidth        = vaddrWidth - 12
     /** Derived maximum physical page number width. */
