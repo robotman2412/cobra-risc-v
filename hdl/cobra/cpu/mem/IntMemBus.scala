@@ -38,7 +38,7 @@ case class IntMemBus(cfg: CobraCfg, isData: Boolean) extends Bundle with IMaster
     /** Raise a trap corresponding to `cause`. */
     val trap   = Bool()
     /** Value to be written to `mcause` or `scause` on memory access trap. */
-    val cause  = UInt(4 bits)
+    val cause  = UInt(5 bits)
     /** Read data; if `read` is true, memory shall be read into this. */
     val rdata  = Bits(dataWidth bits)
     

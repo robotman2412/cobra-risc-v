@@ -16,5 +16,5 @@ case class FetchedInsn(cfg: CobraCfg) extends Bundle {
     /** Trap raised. */
     val trap    = Bool()
     /** Trap cause. */
-    val cause   = UInt(4 bits)
+    val cause   = UInt(5 bits)
 }

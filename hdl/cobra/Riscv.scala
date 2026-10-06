@@ -79,21 +79,21 @@ object Riscv {
     def ALU_AND             = B"111"
     
     // Trap cause values.
-    def CAUSE_IALIGN        = U(0).resized
-    def CAUSE_IACCESS       = U(1).resized
-    def CAUSE_IILLEGAL      = U(2).resized
-    def CAUSE_BREAK         = U(3).resized
-    def CAUSE_LALIGN        = U(4).resized
-    def CAUSE_LACCESS       = U(5).resized
-    def CAUSE_SALIGN        = U(6).resized
-    def CAUSE_SACCESS       = U(7).resized
-    def CAUSE_ECALL_U       = U(8).resized
-    def CAUSE_ECALL_S       = U(9).resized
-    def CAUSE_ECALL_M       = U(11).resized
-    def CAUSE_IPAGE         = U(12).resized
-    def CAUSE_LPAGE         = U(13).resized
-    def CAUSE_SPAGE         = U(15).resized
-    def CAUSE_DOUBLETRAP    = U(16).resized
-    def CAUSE_SWCHECK       = U(18).resized
-    def CAUSE_HWERR         = U(19).resized
+    def CAUSE_IALIGN        = U(0, 5 bits)
+    def CAUSE_IACCESS       = U(1, 5 bits)
+    def CAUSE_IILLEGAL      = U(2, 5 bits)
+    def CAUSE_BREAK         = U(3, 5 bits)
+    def CAUSE_LALIGN        = U(4, 5 bits)
+    def CAUSE_LACCESS       = U(5, 5 bits)
+    def CAUSE_SALIGN        = U(6, 5 bits)
+    def CAUSE_SACCESS       = U(7, 5 bits)
+    def CAUSE_ECALL_U       = U(8, 5 bits)
+    def CAUSE_ECALL_S       = U(9, 5 bits)
+    def CAUSE_ECALL_M       = U(11, 5 bits)
+    def CAUSE_IPAGE         = U(12, 5 bits)
+    def CAUSE_LPAGE         = U(13, 5 bits)
+    def CAUSE_SPAGE         = U(15, 5 bits)
+    def CAUSE_DOUBLETRAP    = U(16, 5 bits)
+    def CAUSE_SWCHECK       = U(18, 5 bits)
+    def CAUSE_HWERR         = U(19, 5 bits)
 }
