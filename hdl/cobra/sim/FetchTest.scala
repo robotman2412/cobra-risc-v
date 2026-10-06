@@ -72,11 +72,14 @@ case class FetchTB(cfg: CobraCfg) extends Component {
     
     // Testbench logic.
     fetch.io.ibus.toAhb3Master.toAhbLite3 <> irom.io.ahb
+    irom.io.ahb.HADDR.allowOverride()
     fetch.io.ibus.trap.allowOverride()
     fetch.io.ibus.cause.allowOverride()
     fetch.io.ibus.rdata.allowOverride()
     fetch.io.ibus.ready.allowOverride()
+    val prevAddr = RegNext(irom.io.ahb.HADDR)
     when (io.stall) {
+        irom.io.ahb.HADDR := prevAddr
         fetch.io.ibus.trap.assignDontCare()
         fetch.io.ibus.cause.assignDontCare()
         fetch.io.ibus.rdata.assignDontCare()

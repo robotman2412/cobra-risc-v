@@ -92,8 +92,12 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     
     // FIFO consumption logic.
     val readNext     = readIndex + consume
-    fetchTrigger    := fetchValid =/= B"11" || (readNext >> 2) =/= (readIndex >> 2)
     readIndex       := readNext
+    fetchTrigger    := fetchValid =/= B"11" || readNext(2) =/= readIndex(2)
+    when (readNext(2) =/= readIndex(2)) {
+        // Cancel validity for next cycle when a packet will be fully consumed this cycle.
+        fetchValidBuf(readIndex >> 2) := False
+    }
     
     // FIFO availability logic.
     val hasCur   = fetchValid(readIndex >> 2)
@@ -101,7 +105,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     when (hasCur && hasNext) {
         available := 4
     } elsewhen (hasCur) {
-        available := ~readIndex & U"011"
+        available := U(4) - readIndex(1 downto 0)
     } otherwise {
         available := U(0)
     }
@@ -115,15 +119,19 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** Whether the instructions are 32-bit. */
     val isLong      = Vec.fill(2)(Bool())   // Bits(2 bits) would generate a combinatorial loop error.
     
-    consume := U(0)
-    io.dout(0).valid := False
-    io.dout(0).payload.assignDontCare
-    io.dout(1).valid := False
-    io.dout(1).payload.assignDontCare
-    
     for (i <- 0 until 4) {
         flatRing(i)   := fetchPacket(0).data(i*16+15 downto i*16)
         flatRing(i+4) := fetchPacket(1).data(i*16+15 downto i*16)
+    }
+    
+    // Available / consume handshaking and validity logic.
+    io.dout(0).valid := U(1, 3 bits) + isLong(0).asUInt <= available
+    io.dout(1).valid := U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt <= available
+    consume := U(0)
+    when (io.dout(1).fire) {
+        consume := U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt
+    } elsewhen (io.dout(0).fire) {
+        consume := U(1, 3 bits) + isLong(0).asUInt
     }
     
     // Instuction extraction.
