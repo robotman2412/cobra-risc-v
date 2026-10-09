@@ -30,7 +30,15 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         val ibus    = master port IntMemBus(cfg, false)
         /** Fetched instructions. */
         val dout    = Vec.fill(2)(master port Stream(FetchedInsn(cfg)))
+        
+        /** Trigger a branch starting next cycle. */
+        val branchTrigger   = in port Bool()
+        /** Value written to program counter upon branch. */
+        val branchTarget    = in port SInt(cfg.badVaddrWidth bits)
     }
+    
+    private val PCW = cfg.badVaddrWidth
+    private val VAW = cfg.vaddrWidth
     
     /** How much to consume this cycle. */
     val consume     = UInt(3 bits)
@@ -42,7 +50,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** Which half of the ringbuffer is to be refilled by the current memory response. */
     val writeIndex      = RegInit(U(0, 1 bits))
     /** A fetch cycle is in progress. */
-    val writeActive     = RegInit(False)
+    val fetchActive     = RegInit(False)
     /** Program counter of pending fetch is non-canonical (RV64 only). */
     val writeNonCanon   = RegInit(False)
     /** Ringbuffer read index in 16-bit increments. */
@@ -50,7 +58,9 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** Trigger a new fetch cycle. */
     val fetchTrigger    = Bool()
     /** Next address to fetch from. */
-    val pc              = RegInit(S(cfg.entrypoint & ~7l, cfg.badVaddrWidth bits))
+    val addr            = SInt(PCW bits)
+    /** The one and only program counter. */
+    val pc              = RegInit(S(cfg.entrypoint & ~7l, PCW bits))
     
     /** Fetch packet ringbuffer with forwarding. */
     val fetchPacket     = Vec.fill(2)(FetchPacket(cfg))
@@ -58,8 +68,13 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     val fetchValid      = Bits(2 bits)
     /** Fetch packet ringbuffer. */
     val fetchPacketBuf  = RegNext(fetchPacket)
+    fetchPacketBuf(0).addr.init(S(0))
+    fetchPacketBuf(1).addr.init(S(0))
     /** Buffer valid state. */
     val fetchValidBuf   = Reg(Bits(2 bits), B(0), fetchValid)
+    
+    addr(PCW-1 downto 3) := pc(PCW-1 downto 3)
+    addr(2 downto 0)     := S(0)
     
     fetchValid      := fetchValidBuf
     fetchPacket     := fetchPacketBuf
@@ -67,14 +82,15 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     io.ibus.exec    := True
     io.ibus.priv    := U"11" // TODO.
     io.ibus.pgEn    := False // TODO.
-    io.ibus.addr    := pc(cfg.vaddrWidth-1 downto 0)
+    io.ibus.addr(VAW-1 downto 3)    := addr(VAW-1 downto 3)
+    io.ibus.addr(2 downto 0)        := S(0)
     io.ibus.asize   := U(3)
     
     // Memory response receiver.
-    when (writeActive) {
+    when (fetchActive) {
         fetchValid(~writeIndex) := io.ibus.ready
         when (io.ibus.ready) {
-            writeActive := False
+            fetchActive := False
         }
         fetchPacket(~writeIndex).data   := io.ibus.rdata
         when (writeNonCanon) {
@@ -89,14 +105,15 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     // Memory request driver.
     when (fetchTrigger) {
         // (Re-)trigger fetch cycle.
-        val nonCanon     = if (cfg.isa.RV64) pc(cfg.badVaddrWidth-1) =/= pc(cfg.vaddrWidth-1) else False
+        val nonCanon     = if (cfg.isa.RV64) addr(PCW-1) =/= addr(cfg.vaddrWidth-1) else False
         io.ibus.enable  := !nonCanon
         when (io.ibus.ready) {
-            writeNonCanon   := nonCanon
-            writeActive     := True
-            writeIndex      := ~writeIndex
-            pc              := pc + S(8)
-            fetchPacketBuf(writeIndex).addr := pc
+            writeNonCanon       := nonCanon
+            fetchActive         := True
+            writeIndex          := ~writeIndex
+            pc(PCW-1 downto 3)  := addr(PCW-1 downto 3) + S(1)
+            fetchPacketBuf(writeIndex)
+                .addr(PCW-1 downto 3) := addr(PCW-1 downto 3)
         }
     }
     
@@ -120,6 +137,23 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
         available := U(0)
     }
     
+    // Branching logic.
+    when (io.branchTrigger) {
+        // Update program counter.
+        readIndex(1 downto 0)   := io.branchTarget(2 downto 1).asUInt
+        readIndex(2)            := writeIndex(0)
+        addr(PCW-1 downto 3)    := io.branchTarget(PCW-1 downto 3)
+        // Initiate a new fetch.
+        fetchTrigger            := True
+        fetchValidBuf           := B"00"
+        
+        when (fetchActive && !io.ibus.ready) {
+            // Overwrite the fetch if we're stalled on a previous fetch.
+            pc(PCW-1 downto 3)  := io.branchTarget(PCW-1 downto 3)
+            fetchActive         := False
+        }
+    }
+    
     /* ==== SECOND STAGE: OUTPUT MULTIPLEXERS ==== */
     
     /** Instruction data laid out as a single ring buffer. */
@@ -127,7 +161,7 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     /** Start index of the instructions within `flatRing`. */
     val insnStart   = Vec.fill(2)(UInt(3 bits))
     /** Whether the instructions are 32-bit. */
-    val isLong      = Vec.fill(2)(Bool())   // Bits(2 bits) would generate a combinatorial loop error.
+    val isLong      = Vec.fill(2)(Bool())   // Bits(2 bits) would generate a spurious combinatorial loop error.
     
     for (i <- 0 until 4) {
         flatRing(i)   := fetchPacket(0).data(i*16+15 downto i*16)
