@@ -21,6 +21,7 @@ case class CobraISA(
     A:              Boolean     = false,
     F:              Boolean     = false,
     D:              Boolean     = false,
+    /** On Cobra, additionally implies Zcb. */
     C:              Boolean     = false
 ) {
     assert(RV64 || !D, "RVD without RV64 is unsupported")

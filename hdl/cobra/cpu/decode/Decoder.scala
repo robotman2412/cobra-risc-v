@@ -94,7 +94,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.usesRd                  := True
         io.decd.usesRs1                 := True
         io.decd.usesRs2                 := !hasImm
-        io.decd.execType                 := ExecType.ALU
+        io.decd.execType                := ExecType.ALU
         io.decd.alu.branchMode          := False
         switch (decomp(14 downto 12)) {
             is(Riscv.ALU_ADD)  {
@@ -147,7 +147,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.usesRs1                 :=  True
         io.decd.usesRs2                 :=  decomp(5)
         io.decd.usesRd                  := !decomp(5)
-        io.decd.execType                 := ExecType.MEM
+        io.decd.execType                := ExecType.MEM
         
     } elsewhen (opcode === Riscv.UIMM_OPS) {
         // AUIPC or LUI.
@@ -163,7 +163,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
             io.decd.alu.mux             := ALUMux.BITWISE
             io.decd.alu.bitMux          := BitMux.LHS
         }
-        io.decd.execType                 := ExecType.ALU
+        io.decd.execType                := ExecType.ALU
         
     } elsewhen (opcode === Riscv.OP_JAL) {
         // JAL.
@@ -171,7 +171,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.subtract            := False
         io.decd.alu.signed              := False
         io.decd.alu.mux                 := ALUMux.ADDER
-        io.decd.execType                 := ExecType.ALU
+        io.decd.execType                := ExecType.ALU
         // TODO: Select ALU inputs.
         // Branch offset.
         io.decd.imm(0)                  := False
@@ -186,7 +186,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.subtract            := False
         io.decd.alu.signed              := False
         io.decd.alu.mux                 := ALUMux.ADDER
-        io.decd.execType                 := ExecType.ALU
+        io.decd.execType                := ExecType.ALU
         // TODO: Select ALU inputs.
         // Branch offset.
         io.decd.imm                     := decomp(31 downto 20).asSInt.resize(32 bits)
@@ -198,7 +198,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.signed              := !decomp(13)
         io.decd.alu.cmpInv              := decomp(12)
         io.decd.alu.cmpLT               := decomp(14)
-        io.decd.execType                 := ExecType.ALU
+        io.decd.execType                := ExecType.ALU
         // Branch offset.
         io.decd.imm(31 downto 12)       := decomp(31).asSInt.resize(20 bits)
         io.decd.imm(10 downto  5)       := decomp(30 downto 25).asSInt
