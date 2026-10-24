@@ -16,31 +16,32 @@ case class DecdInsn(
     val hasMem: Boolean = true,
     val hasAlu: Boolean = true,
     val hasMul: Boolean = true,
-    val hasDiv: Boolean = true
+    val hasDiv: Boolean = true,
+    val hasFpu: Boolean = true,
 ) extends Bundle {
     // Register indices.
     val rs1     = UInt(5 bits)
     val rs2     = UInt(5 bits)
-    val rs3     = UInt(5 bits)
+    val rs3     = hasFpu generate UInt(5 bits)
     val rd      = UInt(5 bits)
     // Register source shorthand.
     def rs(index: Int): UInt = index match {
         case 0 => rs1
         case 1 => rs2
         case 2 => rs3
-        case _ => U"00000"
+        case _ => null
     }
     // Register usage.
     val usesRs1 = Bool()
     val usesRs2 = Bool()
-    val usesRs3 = Bool()
+    val usesRs3 = hasFpu generate Bool()
     val usesRd  = Bool()
     // Register source usage shorthand.
     def usesRs(index: Int): Bool = index match {
         case 0 => usesRs1
         case 1 => usesRs2
         case 2 => usesRs3
-        case _ => False
+        case _ => null
     }
     // Required execution unit type.
     val execType = DecdInsn.ExecType()
@@ -53,7 +54,7 @@ case class DecdInsn(
     // Perform 32-bit integer operation.
     val op32     = Bool()
     // ALU control signals.
-    val alu      = hasAlu generate DecdInsn.ALU()
+    val alu      = hasAlu generate DecdInsn.Alu()
     // Multiplier control signals.
     val mul      = hasMul generate DecdInsn.Mul()
     // Divider control signals.
@@ -67,12 +68,13 @@ object DecdInsn {
             capabilities.contains(ExecType.MEM),
             capabilities.contains(ExecType.ALU),
             capabilities.contains(ExecType.MUL),
-            capabilities.contains(ExecType.DIV)
+            capabilities.contains(ExecType.DIV),
+            capabilities.contains(ExecType.FPU)
         )
     }
     /** Required execution unit type. */
     object ExecType extends SpinalEnum {
-        val MEM, ALU, MUL, DIV = newElement()
+        val MEM, ALU, MUL, DIV, FPU = newElement()
     }
     /** Memory access control signals. */
     case class Mem() extends Bundle {
@@ -98,7 +100,8 @@ object DecdInsn {
         val XOR, LHS, OR, AND = newElement()
     }
     /** ALU control signals. */
-    case class ALU() extends Bundle {
+    case class Alu() extends Bundle {
+        val op32        = Bool()
         val branchMode  = Bool()
         val signed      = Bool()
         val subtract    = Bool()

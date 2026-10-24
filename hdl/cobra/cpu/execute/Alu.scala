@@ -43,18 +43,26 @@ case class Alu(cfg: CobraCfg) extends Component {
     // Adder logic.
     val lhs = UInt(cfg.XLEN bits)
     val rhs = UInt(cfg.XLEN bits)
+    val cin = insn.alu.subtract
     lhs := data1.asUInt
     rhs := data2.asUInt
+    if (cfg.isa.RV64) {
+        when (insn.alu.op32) {
+            // Sign-extend ignoring the higher 32 bits for OP-32 and OP-IMM-32.
+            lhs(63 downto 32) := data1(31).asSInt.resize(32).asUInt
+            rhs(63 downto 32) := data2(31).asSInt.resize(32).asUInt
+        }
+    }
     when (insn.alu.signed) {
-        lhs(cfg.XLEN-1) := !data1(cfg.XLEN-1)
+        lhs(cfg.XLEN-1) := !lhs(cfg.XLEN-1)
     }
     when (insn.alu.signed ^ insn.alu.subtract) {
-        rhs(cfg.XLEN-1) := !data2(cfg.XLEN-1)
+        rhs(cfg.XLEN-1) := !rhs(cfg.XLEN-1)
     }
     when (insn.alu.subtract) {
-        rhs(cfg.XLEN-2 downto 0) := ~data2(cfg.XLEN-2 downto 0).asUInt
+        rhs(cfg.XLEN-2 downto 0) := ~rhs(cfg.XLEN-2 downto 0)
     }
-    val adder = lhs.expand + rhs.expand
+    val adder = lhs.expand + rhs.expand + cin.asUInt.resize(cfg.XLEN)
     
     // Comparator.
     val zero  = adder === U(0, cfg.XLEN bits)

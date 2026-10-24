@@ -37,6 +37,10 @@ case class Decoder(cfg: CobraCfg) extends Component {
     // Defaults.
     io.decd.assignDontCare()
     immEnc.assignDontCare()
+    io.decd.usesRs1 := False
+    io.decd.usesRs2 := False
+    io.decd.usesRs3 := False
+    io.decd.usesRd  := False
     hasImm := False
     
     // Register indices.
@@ -74,9 +78,9 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.usesRs1                 := True
         io.decd.usesRs2                 := True
         when (decomp(14)) {
-            io.decd.execType             := ExecType.DIV
+            io.decd.execType            := ExecType.DIV
         } otherwise {
-            io.decd.execType             := ExecType.MUL
+            io.decd.execType            := ExecType.MUL
         }
         // Multiplier bit patterns.
         io.decd.mul.upper               := decomp(13 downto 12) =/= B"00"

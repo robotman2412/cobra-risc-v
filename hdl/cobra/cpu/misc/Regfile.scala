@@ -40,17 +40,17 @@ case class RegWrite(width: Int) extends Bundle with IMasterSlave {
 /**
  * Parametric register file.
  */
-case class Regfile(cfg: CobraCfg, width: Int, wports: Int = 2, rports: Int = 4) extends Component {
+case class Regfile(cfg: CobraCfg, writeR0: Boolean, wports: Int = 2, rports: Int = 4) extends Component {
     val io = new Bundle {
-        val write = Vec.fill(wports)(slave(RegWrite(width)))
-        val read  = Vec.fill(rports)(slave(RegRead(width)))
+        val write = Vec.fill(wports)(slave(RegWrite(cfg.XLEN)))
+        val read  = Vec.fill(rports)(slave(RegRead(cfg.XLEN)))
     }
     
-    val storage = Mem(Bits(width bits), 32)
+    val storage = Mem(Bits(cfg.XLEN bits), 32)
     storage.simPublic()
-    storage.init(List.fill(32)(B(0, width bits)))
+    storage.init(List.fill(32)(B(0, cfg.XLEN bits)))
     for (port <- io.write) {
-        when (port.we && port.regno =/= U"00000") {
+        when (port.we && (Bool(writeR0) || port.regno =/= U"00000")) {
             storage.write(port.regno, port.data)
         }
     }

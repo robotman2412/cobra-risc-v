@@ -22,7 +22,7 @@ case class CobraCpu(
 ) extends Component {
     val io = new Bundle {
         /** Data bus. */
-        val dbus = master port AhbLite3Master(AhbLite3Config(cfg.paddrWidth, cfg.XLEN))
+        // val dbus = master port AhbLite3Master(AhbLite3Config(cfg.paddrWidth, cfg.XLEN))
         /** Instruction bus. */
         val ibus = master port AhbLite3Master(AhbLite3Config(cfg.paddrWidth, 64))
     }

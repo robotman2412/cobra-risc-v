@@ -10,11 +10,12 @@ val spinalVersion = "1.15.0"
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
+val jElf = "net.fornwall" % "jelf" % "0.12.0"
 
 lazy val cobra = (project in file("."))
   .settings(
     Compile / scalaSource := baseDirectory.value / "hdl",
-    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
+    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin, jElf)
   )
 
 fork := true

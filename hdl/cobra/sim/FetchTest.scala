@@ -10,7 +10,6 @@ import spinal.core._
 import spinal.core.sim._
 import spinal.lib._
 import spinal.lib.bus.amba3.ahblite._
-import spinal.lib.bus.regif.AhbLite3BusInterface
 
 case class FetchTB(cfg: CobraCfg) extends Component {
     val io = new Bundle {

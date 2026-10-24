@@ -85,8 +85,8 @@ case class CobraCfg(
         assert(pagingLevels == 2, "RV32 paging levels must be exactly 2")
     }
     assert(paddrWidth >= 16, "Minimum supported physical address width is 16")
-    assert(entrypoint % 2 == 0, "Entrypoint must be aligned to 2 bytes")
-    assert(entrypoint < (1 << paddrWidth), "Entrypoint address does not fit in physical address width")
+    assert(entrypoint % 2 == 0, f"Entrypoint must be aligned to 2 bytes: 0x$entrypoint%x")
+    assert(entrypoint < (BigInt(1) << paddrWidth), f"Entrypoint address does not fit in physical address width: 0x$entrypoint%x")
     /** Width of integer registers and CSRs. */
     val XLEN            = isa.XLEN
     /** Width of floating-point registers. */
