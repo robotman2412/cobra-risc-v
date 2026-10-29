@@ -92,7 +92,7 @@ object DecodedInsn {
         val weakLock    = Bool()
     }
     /** ALU output selection. */
-    object ALUMux extends SpinalEnum {
+    object AluMux extends SpinalEnum {
         val BITWISE, SHIFTER, ADDER, COMPARATOR = newElement()
     }
     /** ALU bitwise mode selection. */
@@ -110,16 +110,18 @@ object DecodedInsn {
         val shiftRight  = Bool()
         val arithShift  = Bool()
         val bitMux      = BitMux()
-        val mux         = ALUMux()
+        val mux         = AluMux()
     }
     /** Multiplier control signals. */
     case class Mul() extends Bundle {
+        val enable      = Bool()
         val upper       = Bool()
         val unsignedL   = Bool()
         val unsignedR   = Bool()
     }
     /** Divider control signals. */
     case class Div() extends Bundle {
+        val enable      = Bool()
         val remainder   = Bool()
         val unsigned    = Bool()
     }

@@ -37,14 +37,20 @@ case class Decoder(cfg: CobraCfg) extends Component {
     val hasImm = Bool()
     
     // Defaults.
-    io.decd.assignDontCare()
     immEnc.assignDontCare()
-    io.decd.usesRs1 := False
-    io.decd.usesRs2 := False
-    io.decd.usesRs3 := False
-    io.decd.usesRd  := False
-    io.legal        := False
-    hasImm          := False
+    io.decd.assignDontCare()
+    io.decd.mul.enable  := False
+    io.decd.div.enable  := False
+    io.decd.mem.re      := False
+    io.decd.mem.we      := False
+    io.decd.alu.mux     := AluMux.BITWISE
+    io.decd.alu.bitMux  := BitMux.LHS
+    io.decd.usesRs1     := False
+    io.decd.usesRs2     := False
+    io.decd.usesRs3     := False
+    io.decd.usesRd      := False
+    io.legal            := False
+    hasImm              := False
     
     // Register indices.
     io.decd.rs1 := decomp(19 downto 15).asUInt
@@ -107,43 +113,43 @@ case class Decoder(cfg: CobraCfg) extends Component {
         switch (decomp(14 downto 12)) {
             is(Riscv.ALU_ADD)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.ADDER
+                io.decd.alu.mux         := AluMux.ADDER
                 io.decd.alu.subtract    := decomp(30) && !hasImm
             }
             is(Riscv.ALU_SLL)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.SHIFTER
+                io.decd.alu.mux         := AluMux.SHIFTER
                 io.decd.alu.shiftRight  := False
             }
             is(Riscv.ALU_SLT)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.COMPARATOR
+                io.decd.alu.mux         := AluMux.COMPARATOR
                 io.decd.alu.signed      := True
             }
             is(Riscv.ALU_SLTU) {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.COMPARATOR
+                io.decd.alu.mux         := AluMux.COMPARATOR
                 io.decd.alu.signed      := False
             }
             is(Riscv.ALU_XOR)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.BITWISE
+                io.decd.alu.mux         := AluMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.XOR
             }
             is(Riscv.ALU_SRL)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.SHIFTER
+                io.decd.alu.mux         := AluMux.SHIFTER
                 io.decd.alu.shiftRight  := False
                 io.decd.alu.arithShift  := decomp(30)
             }
             is(Riscv.ALU_OR)   {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.BITWISE
+                io.decd.alu.mux         := AluMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.OR
             }
             is(Riscv.ALU_AND)  {
                 io.legal := True
-                io.decd.alu.mux         := ALUMux.BITWISE
+                io.decd.alu.mux         := AluMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.AND
             }
         }
@@ -174,11 +180,11 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.branchMode          := False
         when (decomp(5)) {
             // TODO: Assign PC to RHS.
-            io.decd.alu.mux             := ALUMux.ADDER
+            io.decd.alu.mux             := AluMux.ADDER
             io.decd.alu.signed          := False
             io.decd.alu.subtract        := False
         } otherwise {
-            io.decd.alu.mux             := ALUMux.BITWISE
+            io.decd.alu.mux             := AluMux.BITWISE
             io.decd.alu.bitMux          := BitMux.LHS
         }
         io.decd.execType                := ExecType.ALU
@@ -189,7 +195,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.branchMode          := False
         io.decd.alu.subtract            := False
         io.decd.alu.signed              := False
-        io.decd.alu.mux                 := ALUMux.ADDER
+        io.decd.alu.mux                 := AluMux.ADDER
         io.decd.execType                := ExecType.ALU
         // TODO: Select ALU inputs.
         // Branch offset.
@@ -205,7 +211,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.branchMode          := False
         io.decd.alu.subtract            := False
         io.decd.alu.signed              := False
-        io.decd.alu.mux                 := ALUMux.ADDER
+        io.decd.alu.mux                 := AluMux.ADDER
         io.decd.execType                := ExecType.ALU
         // TODO: Select ALU inputs.
         // Branch offset.

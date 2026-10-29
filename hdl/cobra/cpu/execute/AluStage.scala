@@ -15,14 +15,16 @@ import cobra.cpu.decode._
 /**
  * ALU that supports additive, branch condition eval, bitwise and bit shift.
  */
-case class AluStage(cfg: CobraCfg) extends Component {
+case class AluStage(cfg: CobraCfg, mayBypass: Boolean) extends Component {
     val io = new Bundle {
         /** Instruction to execute. */
-        val din   = slave  port Flow(InflightInsn(cfg, true, true, false, false))
+        val din     = slave  port Flow(InflightInsn(cfg, true, true, false, false))
         /** Result data and instruction to pass through. */
-        val dout  = master port Flow(InflightInsn(cfg, true, false, false, false))
+        val dout    = master port Flow(InflightInsn(cfg, true, mayBypass, false, false))
         /** Stall this unit. */
-        val stall = in     port Bool()
+        val stall   = in     port Bool()
+        /** Do not execute the instruction in this unit. */
+        val bypass  = mayBypass generate (in port Bool())
     }
     
     // Pipeline register.
@@ -97,14 +99,24 @@ case class AluStage(cfg: CobraCfg) extends Component {
     
     // Output multiplexer.
     switch (insn.alu.mux) {
-        is (ALUMux.ADDER)      { io.dout.payload.data1 := adder.asBits.resize(cfg.XLEN) }
-        is (ALUMux.SHIFTER)    { io.dout.payload.data1 := shifter.asBits.resize(cfg.XLEN) }
-        is (ALUMux.COMPARATOR) { io.dout.payload.data1 := cmp.asBits.resize(cfg.XLEN) }
-        is (ALUMux.BITWISE)    { io.dout.payload.data1 := bitwise }
+        is (AluMux.ADDER)      { io.dout.payload.data1 := adder.asBits.resize(cfg.XLEN) }
+        is (AluMux.SHIFTER)    { io.dout.payload.data1 := shifter.asBits }
+        is (AluMux.COMPARATOR) { io.dout.payload.data1 := cmp.asBits.resize(cfg.XLEN) }
+        is (AluMux.BITWISE)    { io.dout.payload.data1 := bitwise }
     }
-    io.dout.payload.data2 := data2
-    io.dout.payload.insn := insn
-    io.dout.payload.pc := pc
+    io.dout.insn := insn
+    io.dout.pc := pc
+    if (mayBypass) {
+        when(io.bypass) {
+            io.dout.payload.data1 := data1
+        } otherwise {
+            io.dout.payload.insn.alu.mux := AluMux.BITWISE
+            io.dout.payload.insn.alu.bitMux := BitMux.LHS
+        }
+    }
+    if (io.dout.payload.data2 != null) {
+        io.dout.payload.data2 := data2
+    }
     
     // Stream logic.
     io.dout.valid := valid

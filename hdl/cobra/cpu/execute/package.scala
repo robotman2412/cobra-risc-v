@@ -19,6 +19,8 @@ package object execute {
         val hasMul: Boolean = true,
         val hasDiv: Boolean = true
     ) extends Bundle {
+        private val needData2 = hasMem || hasAlu || hasMul || hasDiv
+        
         /** Instruction to execut and/or pass through. */
         val insn  = DecodedInsn(hasMem, hasAlu, hasMul, hasDiv)
         /** Instruction starting virtual address. */
@@ -26,7 +28,7 @@ package object execute {
         /** Value of `rs1` or `rd`. */
         val data1 = Bits(cfg.XLEN bits)
         /** Value of `rs2` or immediate. */
-        val data2 = Bits(cfg.XLEN bits)
+        val data2 = needData2 generate Bits(cfg.XLEN bits)
         
         def toRegWrite() = {
             val write = RegWrite(cfg.XLEN)

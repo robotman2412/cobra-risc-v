@@ -32,8 +32,8 @@ case class CobraCpu(
     
     val fetch   = InsnFetcher(cfg)
     val decd    = DecodeStage(cfg)
-    val alu0    = AluStage(cfg)
-    val alu1    = AluStage(cfg)
+    val alu0    = AluStage(cfg, false)
+    val alu1    = AluStage(cfg, false)
     val delay0  = DelayStage(cfg, 4, false, false, false, false)
     val delay1  = DelayStage(cfg, 4, false, false, false, false)
     
