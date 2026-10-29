@@ -4,7 +4,7 @@ package cobra.cpu.decode
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 import cobra.cpu._
-import cobra.cpu.decode.DecdInsn.ExecType
+import cobra.cpu.decode.DecodedInsn.ExecType
 import spinal.core._
 
 
@@ -12,7 +12,7 @@ import spinal.core._
 /**
  * Decoded instruction data.
  */
-case class DecdInsn(
+case class DecodedInsn(
     val hasMem: Boolean = true,
     val hasAlu: Boolean = true,
     val hasMul: Boolean = true,
@@ -44,27 +44,27 @@ case class DecdInsn(
         case _ => null
     }
     // Required execution unit type.
-    val execType = DecdInsn.ExecType()
+    val execType = DecodedInsn.ExecType()
     // Decoded immediate value.
     val imm      = SInt(32 bits)
     // Float operation size.
     val fpSize   = UInt(2 bits)
     // Memory access control signals.
-    val mem      = hasMem generate DecdInsn.Mem()
+    val mem      = hasMem generate DecodedInsn.Mem()
     // Perform 32-bit integer operation.
     val op32     = Bool()
     // ALU control signals.
-    val alu      = hasAlu generate DecdInsn.Alu()
+    val alu      = hasAlu generate DecodedInsn.Alu()
     // Multiplier control signals.
-    val mul      = hasMul generate DecdInsn.Mul()
+    val mul      = hasMul generate DecodedInsn.Mul()
     // Divider control signals.
-    val div      = hasDiv generate DecdInsn.Div()
+    val div      = hasDiv generate DecodedInsn.Div()
 }
 
-object DecdInsn {
+object DecodedInsn {
     /** Generate DecodedInsn from capabilities list. */
-    def apply(capabilities: Seq[SpinalEnumElement[ExecType.type]]): DecdInsn = {
-        return DecdInsn(
+    def apply(capabilities: Seq[SpinalEnumElement[ExecType.type]]): DecodedInsn = {
+        return DecodedInsn(
             capabilities.contains(ExecType.MEM),
             capabilities.contains(ExecType.ALU),
             capabilities.contains(ExecType.MUL),

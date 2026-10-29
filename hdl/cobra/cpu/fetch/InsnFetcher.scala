@@ -41,33 +41,39 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     private val VAW = cfg.vaddrWidth
     
     /** How much to consume this cycle. */
-    val consume     = UInt(3 bits)
+    val consume             = UInt(3 bits)
+    /** How much would be consumed if the memory response were ready. */
+    val consumeIfReady      = UInt(3 bits)
     /** How much is available this cycle. */
-    val available   = UInt(3 bits)
+    val available           = UInt(3 bits)
+    /** How much would be available if the memory response were ready. */
+    val availableIfReady    = UInt(3 bits)
     
     /* ==== FIRST STAGE: FETCH RINGBUFFER ==== */
     
     /** Which half of the ringbuffer is to be refilled by the current memory response. */
-    val writeIndex      = RegInit(U(0, 1 bits))
+    val writeIndex          = RegInit(U(0, 1 bits))
     /** A fetch cycle is in progress. */
-    val fetchActive     = RegInit(False)
+    val fetchActive         = RegInit(False)
     /** Program counter of pending fetch is non-canonical (RV64 only). */
-    val writeNonCanon   = RegInit(False)
+    val writeNonCanon       = RegInit(False)
     /** Ringbuffer read index in 16-bit increments. */
-    val readIndex       = RegInit(U((cfg.entrypoint >> 1) & 3, 3 bits))
+    val readIndex           = RegInit(U((cfg.entrypoint >> 1) & 3, 3 bits))
     /** Trigger a new fetch cycle. */
-    val fetchTrigger    = Bool()
+    val fetchTrigger        = Bool()
     /** Next address to fetch from. */
-    val addr            = SInt(PCW bits)
+    val addr                = SInt(PCW bits)
     /** The one and only program counter. */
-    val pc              = RegInit(S(cfg.entrypoint & ~7l, PCW bits))
+    val pc                  = RegInit(S(cfg.entrypoint & ~7l, PCW bits))
     
     /** Fetch packet ringbuffer with forwarding. */
-    val fetchPacket     = Vec.fill(2)(FetchPacket(cfg))
+    val fetchPacket         = Vec.fill(2)(FetchPacket(cfg))
     /** Buffer valid state with forwarding. */
-    val fetchValid      = Bits(2 bits)
+    val fetchValid          = Bits(2 bits)
+    /** Buffer valid state with forwarding assuming the memory response is ready. */
+    val fetchValidIfReady   = Bits(2 bits)
     /** Fetch packet ringbuffer. */
-    val fetchPacketBuf  = RegNext(fetchPacket)
+    val fetchPacketBuf      = RegNext(fetchPacket)
     fetchPacketBuf(0).addr.init(S(0))
     fetchPacketBuf(1).addr.init(S(0))
     /** Buffer valid state. */
@@ -76,23 +82,25 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     addr(PCW-1 downto 3) := pc(PCW-1 downto 3)
     addr(2 downto 0)     := S(0)
     
-    fetchValid      := fetchValidBuf
-    fetchPacket     := fetchPacketBuf
-    io.ibus.enable  := False
-    io.ibus.exec    := True
-    io.ibus.priv    := U"11" // TODO.
-    io.ibus.pgEn    := False // TODO.
+    fetchValid          := fetchValidBuf
+    fetchValidIfReady   := fetchValidBuf
+    fetchPacket         := fetchPacketBuf
+    io.ibus.enable      := False
+    io.ibus.exec        := True
+    io.ibus.priv        := U"11" // TODO.
+    io.ibus.pgEn        := False // TODO.
     io.ibus.addr(VAW-1 downto 3)    := addr(VAW-1 downto 3)
     io.ibus.addr(2 downto 0)        := S(0)
-    io.ibus.asize   := U(3)
+    io.ibus.asize       := U(3)
     
     // Memory response receiver.
     when (fetchActive) {
-        fetchValid(~writeIndex) := io.ibus.ready
+        fetchValid(~writeIndex)         := io.ibus.ready
+        fetchValidIfReady(~writeIndex)  := True
+        fetchPacket(~writeIndex).data   := io.ibus.rdata
         when (io.ibus.ready) {
             fetchActive := False
         }
-        fetchPacket(~writeIndex).data   := io.ibus.rdata
         when (writeNonCanon) {
             fetchPacket(~writeIndex).trap   := True
             fetchPacket(~writeIndex).cause  := Riscv.CAUSE_IACCESS // TODO: Change to CAUSE_IPAGE if pgEn.
@@ -118,23 +126,27 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     }
     
     // FIFO consumption logic.
-    val readNext     = readIndex + consume
-    readIndex       := readNext
-    fetchTrigger    := fetchValid =/= B"11" || readNext(2) =/= readIndex(2)
+    val readNext         = readIndex + consume
+    val readNextIfReady  = readIndex + consumeIfReady
+    readIndex           := readNext
+    // Request the next packet independently of ready; state advances only when ready.
+    fetchTrigger        := fetchValidIfReady =/= B"11" || readNextIfReady(2) =/= readIndex(2)
     when (readNext(2) =/= readIndex(2)) {
         // Cancel validity for next cycle when a packet will be fully consumed this cycle.
         fetchValidBuf(readIndex >> 2) := False
     }
     
     // FIFO availability logic.
-    val hasCur   = fetchValid(readIndex >> 2)
-    val hasNext  = fetchValid(~readIndex >> 2)
-    when (hasCur && hasNext) {
-        available := 4
-    } elsewhen (hasCur) {
-        available := U(4) - readIndex(1 downto 0)
-    } otherwise {
-        available := U(0)
+    for ((valid, count) <- Seq((fetchValid, available), (fetchValidIfReady, availableIfReady))) {
+        val hasCur   = valid(readIndex >> 2)
+        val hasNext  = valid(~readIndex >> 2)
+        when (hasCur && hasNext) {
+            count := 4
+        } elsewhen (hasCur) {
+            count := U(4) - readIndex(1 downto 0)
+        } otherwise {
+            count := U(0)
+        }
     }
     
     // Branching logic.
@@ -169,13 +181,17 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     }
     
     // Available / consume handshaking and validity logic.
-    io.dout(0).valid := U(1, 3 bits) + isLong(0).asUInt <= available
-    io.dout(1).valid := U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt <= available
-    consume := U(0)
-    when (io.dout(1).fire) {
-        consume := U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt
-    } elsewhen (io.dout(0).fire) {
-        consume := U(1, 3 bits) + isLong(0).asUInt
+    io.dout(0).valid    := U(1, 3 bits) + isLong(0).asUInt <= available
+    io.dout(1).valid    := U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt <= available
+    for ((count, used) <- Seq((available, consume), (availableIfReady, consumeIfReady))) {
+        val firstSize    = U(1, 3 bits) + isLong(0).asUInt
+        val bothSize     = U(2, 3 bits) + isLong(0).asUInt + isLong(1).asUInt
+        used    := U(0)
+        when (bothSize <= count && io.dout(1).ready) {
+            used := bothSize
+        } elsewhen (firstSize <= count && io.dout(0).ready) {
+            used := firstSize
+        }
     }
     
     // Instuction extraction.
@@ -192,8 +208,8 @@ case class InsnFetcher(cfg: CobraCfg) extends Component {
     
     // Instruction address/trap logic.
     for (i <- 0 until 2) {
-        val spansPackets = isLong(i) && insnStart(i) === M"-11"
-        val firstPacket = insnStart(i)(2).asUInt
+        val spansPackets    = isLong(i) && insnStart(i) === M"-11"
+        val firstPacket     = insnStart(i)(2).asUInt
         io.dout(i).payload.addr             := fetchPacket(firstPacket).addr
         io.dout(i).payload.addr(2 downto 1) := insnStart(i)(1 downto 0).asSInt
         io.dout(i).payload.trap             := fetchPacket(firstPacket).trap

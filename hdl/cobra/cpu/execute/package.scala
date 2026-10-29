@@ -3,6 +3,7 @@ package cobra.cpu
 import spinal.core._
 import cobra.cpu._
 import cobra.cpu.decode._
+import cobra.cpu.misc._
 
 // Copyright (c) 2024-2026 Julian Scheffers
 // SPDX-License-Identifier: CERN-OHL-P-2.0
@@ -10,8 +11,8 @@ import cobra.cpu.decode._
 
 
 package object execute {
-    /** Represents an instruction to be passed into an execution unit. */
-    case class IssuedInsn(
+    /** Represents an in-flight instruction. */
+    case class InflightInsn(
         val cfg:    CobraCfg,
         val hasMem: Boolean = true,
         val hasAlu: Boolean = true,
@@ -19,11 +20,21 @@ package object execute {
         val hasDiv: Boolean = true
     ) extends Bundle {
         /** Instruction to execut and/or pass through. */
-        val insn  = DecdInsn(hasMem, hasAlu, hasMul, hasDiv)
-        /** Value of `rs1`; left-hand operand. */
+        val insn  = DecodedInsn(hasMem, hasAlu, hasMul, hasDiv)
+        /** Instruction starting virtual address. */
+        val pc    = SInt(cfg.vaddrWidth bits)
+        /** Value of `rs1` or `rd`. */
         val data1 = Bits(cfg.XLEN bits)
-        /** Value of `rs2`; right-hand operand. */
+        /** Value of `rs2` or immediate. */
         val data2 = Bits(cfg.XLEN bits)
+        
+        def toRegWrite() = {
+            val write = RegWrite(cfg.XLEN)
+            write.we    := this.insn.usesRd
+            write.regno := this.insn.rd
+            write.data  := this.data1
+            write
+        }
     }
     
     /** Represents data that is pending computation. */

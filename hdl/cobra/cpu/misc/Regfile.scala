@@ -14,11 +14,10 @@ import spinal.lib._
 case class RegRead(width: Int) extends Bundle with IMasterSlave {
     val regno   = UInt(5 bits)
     val data    = Bits(width bits)
-    val stale   = Bool()
     
     def asMaster() = {
         out(regno)
-        in (data, stale)
+        in (data)
     }
 }
 
@@ -46,23 +45,30 @@ case class Regfile(cfg: CobraCfg, writeR0: Boolean, wports: Int = 2, rports: Int
         val read  = Vec.fill(rports)(slave(RegRead(cfg.XLEN)))
     }
     
-    val storage = Mem(Bits(cfg.XLEN bits), 32)
+    val storage = Vec.fill(32)(RegInit(B(0, cfg.XLEN bits)))
     storage.simPublic()
-    storage.init(List.fill(32)(B(0, cfg.XLEN bits)))
+    io.simPublic()
     for (port <- io.write) {
         when (port.we && (Bool(writeR0) || port.regno =/= U"00000")) {
-            storage.write(port.regno, port.data)
+            storage(port.regno) := port.data
         }
     }
     for (port <- io.read) {
-        port.data  := storage.readAsync(port.regno, writeFirst)
-        port.stale := False
+        port.data := storage(port.regno)
     }
     
     def read(regno: Int) = {
-        storage.getBigInt(regno)
+        storage(regno).toBigInt
+    }
+    def readForwarded(regno: Int): BigInt = {
+        for (port <- io.write.reverse) {
+            if (port.regno.toInt == regno && port.we.toBoolean) {
+                return port.data.toBigInt
+            }
+        }
+        read(regno)
     }
     def write(regno: Int, value: BigInt) = {
-        storage.setBigInt(regno, value)
+        storage(regno) #= value
     }
 }

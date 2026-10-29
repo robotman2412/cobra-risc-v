@@ -5,6 +5,10 @@
 **/__pycache__
 target
 project
+!/project/
+/project/*
+!/project/build.properties
+!/project/plugins.sbt
 .idea
 .metals
 .bloop

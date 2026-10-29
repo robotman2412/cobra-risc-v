@@ -7,10 +7,8 @@
 
 
 // Enough no-ops to flush the entire pipeline.
-// 14 no-ops; 7-deep pipeline two-wide.
+// 10 no-ops; 7-deep pipeline minus the 2 load cycles.
 #define FLUSH_PIPELINE  \
-    nop; nop;           \
-    nop; nop;           \
     nop; nop;           \
     nop; nop;           \
     nop; nop;           \
@@ -54,4 +52,5 @@ _start:
 #define TEST_END            \
     .size _start, .-_start; \
 __test_end:                 \
-    .size __test_end, 0
+    j __test_end;           \
+    .size __test_end, .-__test_end

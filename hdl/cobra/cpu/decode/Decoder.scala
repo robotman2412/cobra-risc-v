@@ -5,7 +5,7 @@ package cobra.cpu.decode
 
 import cobra.Riscv
 import cobra.cpu._
-import cobra.cpu.decode.DecdInsn.ExecType
+import cobra.cpu.decode.DecodedInsn.ExecType
 import spinal.core._
 import spinal.lib._
 
@@ -22,12 +22,14 @@ object ImmEncoding extends SpinalEnum {
  * Instruction decoder logic.
  */
 case class Decoder(cfg: CobraCfg) extends Component {
-    import DecdInsn._
+    import DecodedInsn._
     val io = new Bundle {
-        // Input decompressed instruction.
+        /** Input decompressed instruction. */
         val decomp  = in  port Bits(32 bits)
-        // Output decoded instruction.
-        val decd    = out port DecdInsn()
+        /** Output decoded instruction. */
+        val decd    = out port DecodedInsn()
+        /** Raise an illegal-instruction trap if false. Also checks CSR permissions. */
+        val legal   = out port Bool()
     }
     
     val decomp = io.decomp
@@ -41,7 +43,8 @@ case class Decoder(cfg: CobraCfg) extends Component {
     io.decd.usesRs2 := False
     io.decd.usesRs3 := False
     io.decd.usesRd  := False
-    hasImm := False
+    io.legal        := False
+    hasImm          := False
     
     // Register indices.
     io.decd.rs1 := decomp(19 downto 15).asUInt
@@ -72,6 +75,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
     val opcode = Bits(5 bits)
     opcode := decomp(6 downto 2)
     when (opcode === Riscv.ALU_OPS && decomp(5) && decomp(25)) {
+        io.legal := True
         // MUL/DIV operations.
         io.decd.op32                    := decomp(3)
         io.decd.usesRd                  := True
@@ -102,41 +106,50 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.alu.branchMode          := False
         switch (decomp(14 downto 12)) {
             is(Riscv.ALU_ADD)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.ADDER
                 io.decd.alu.subtract    := decomp(30) && !hasImm
             }
             is(Riscv.ALU_SLL)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.SHIFTER
                 io.decd.alu.shiftRight  := False
             }
             is(Riscv.ALU_SLT)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.COMPARATOR
                 io.decd.alu.signed      := True
             }
             is(Riscv.ALU_SLTU) {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.COMPARATOR
                 io.decd.alu.signed      := False
             }
             is(Riscv.ALU_XOR)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.XOR
             }
             is(Riscv.ALU_SRL)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.SHIFTER
                 io.decd.alu.shiftRight  := False
                 io.decd.alu.arithShift  := decomp(30)
             }
             is(Riscv.ALU_OR)   {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.OR
             }
             is(Riscv.ALU_AND)  {
+                io.legal := True
                 io.decd.alu.mux         := ALUMux.BITWISE
                 io.decd.alu.bitMux      := BitMux.AND
             }
         }
         
     } elsewhen (opcode === Riscv.MEM_OPS) {
+        io.legal := True
         // Load/store operations.
         hasImm                          :=  True
         when (decomp(5)) {
@@ -154,6 +167,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.execType                := ExecType.MEM
         
     } elsewhen (opcode === Riscv.UIMM_OPS) {
+        io.legal := True
         // AUIPC or LUI.
         hasImm                          := True
         immEnc                          := ImmEncoding.IMM20
@@ -170,6 +184,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.execType                := ExecType.ALU
         
     } elsewhen (opcode === Riscv.OP_JAL) {
+        io.legal := True
         // JAL.
         io.decd.alu.branchMode          := False
         io.decd.alu.subtract            := False
@@ -185,6 +200,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.imm(31 downto 20)       := decomp(31).asSInt.resize(12 bits)
         
     } elsewhen (opcode === Riscv.OP_JALR) {
+        io.legal := True
         // JALR.
         io.decd.alu.branchMode          := False
         io.decd.alu.subtract            := False
@@ -196,6 +212,7 @@ case class Decoder(cfg: CobraCfg) extends Component {
         io.decd.imm                     := decomp(31 downto 20).asSInt.resize(32 bits)
         
     } elsewhen (opcode === Riscv.OP_BRANCH) {
+        io.legal := True
         // Branch opcodes.
         io.decd.alu.branchMode          := True
         io.decd.alu.subtract            := True

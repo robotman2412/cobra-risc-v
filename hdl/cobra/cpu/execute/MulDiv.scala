@@ -24,7 +24,7 @@ case class MulDiv(cfg: CobraCfg, isDiv: Boolean) extends Component {
     
     val io = new Bundle {
         /** Instruction to execute. */
-        val din     = slave  port Flow(IssuedInsn(cfg, false, false, !isDiv, isDiv))
+        val din     = slave  port Flow(InflightInsn(cfg, false, false, !isDiv, isDiv))
         /** Pending results. */
         val pending = latency > 1 generate Vec.fill(latency-1)(out port PendData(cfg))
         /** Result data. */

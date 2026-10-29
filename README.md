@@ -6,6 +6,23 @@
 Cobra aims to be a Linux-capable CPU supporting the `RV64IMAFDC_Zicsr_Zifencei` extensions and virtal memory.
 It will support 32-bit or 64-bit, optionally multiply/divide (M), atomics (A), float (FD) and compressed instructions (C). Cobra will be a dual-issue in-order pipeline.
 
+# Build setup
+
+After cloning, run:
+
+```sh
+make setup
+sbt compile
+```
+
+`make setup` initializes the SpinalHDL submodule if it is missing and copies Cobra's
+Bloop plugin declaration into the ignored `spinalhdl/project/metals.sbt` file.
+It preserves an existing submodule checkout and does not change any tracked SpinalHDL files.
+Run it again after changing the Bloop version in `project/plugins.sbt`.
+
+For Metals with Bloop, run **Metals: Import build** after setup. Both Cobra and
+the SpinalHDL source projects will be available to the language server.
+
 # History
 
 Cobra is the successor to [Boa](https://github.com/robotman2412/boa-risc-v), my previous RISC-V CPU.

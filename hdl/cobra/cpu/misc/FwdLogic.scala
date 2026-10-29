@@ -25,9 +25,9 @@ case class FwdLogic(
 ) extends Component {
     val io = new Bundle {
         /** Incoming issued instruction. */
-        val din      = slave  port Flow(IssuedInsn(cfg, hasMem, hasAlu, hasMul, hasDiv))
+        val din      = slave  port Flow(InflightInsn(cfg, hasMem, hasAlu, hasMul, hasDiv))
         /** Outgoing issued instruction. */
-        val dout     = master port Flow(IssuedInsn(cfg, hasMem, hasAlu, hasMul, hasDiv))
+        val dout     = master port Flow(InflightInsn(cfg, hasMem, hasAlu, hasMul, hasDiv))
         /** Stall request; when asserted, this and stages before are stalled. */
         val stallReq = out    port Bool()
     }

@@ -4,7 +4,7 @@ package cobra.cpu.execute
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 import cobra.cpu.CobraCfg
-import cobra.cpu.decode.DecdInsn._
+import cobra.cpu.decode.DecodedInsn._
 import cobra.cpu.execute._
 import spinal.core._
 import spinal.lib._
@@ -15,19 +15,20 @@ import cobra.cpu.decode._
 /**
  * ALU that supports additive, branch condition eval, bitwise and bit shift.
  */
-case class Alu(cfg: CobraCfg) extends Component {
+case class AluStage(cfg: CobraCfg) extends Component {
     val io = new Bundle {
         /** Instruction to execute. */
-        val din   = slave  port Flow(IssuedInsn(cfg, true, true, false, false))
+        val din   = slave  port Flow(InflightInsn(cfg, true, true, false, false))
         /** Result data and instruction to pass through. */
-        val dout  = master port Flow(IssuedInsn(cfg, true, false, false, false))
+        val dout  = master port Flow(InflightInsn(cfg, true, false, false, false))
         /** Stall this unit. */
         val stall = in     port Bool()
     }
     
     // Pipeline register.
-    val valid = RegNextWhen(io.din.valid,         !io.stall)
+    val valid = RegNextWhen(io.din.valid,         !io.stall) init(False)
     val insn  = RegNextWhen(io.din.payload.insn,  !io.stall)
+    val pc    = RegNextWhen(io.din.payload.pc,    !io.stall)
     val data1 = RegNextWhen(io.din.payload.data1, !io.stall)
     val data2 = RegNextWhen(io.din.payload.data2, !io.stall)
     
@@ -53,16 +54,22 @@ case class Alu(cfg: CobraCfg) extends Component {
             rhs(63 downto 32) := data2(31).asSInt.resize(32).asUInt
         }
     }
+    
+    // Input negation.
+    val lhsNeg = UInt(cfg.XLEN bits)
+    val rhsNeg = UInt(cfg.XLEN bits)
+    lhsNeg := lhs
+    rhsNeg := rhs
     when (insn.alu.signed) {
-        lhs(cfg.XLEN-1) := !lhs(cfg.XLEN-1)
+        lhsNeg(cfg.XLEN-1) := !lhs(cfg.XLEN-1)
     }
     when (insn.alu.signed ^ insn.alu.subtract) {
-        rhs(cfg.XLEN-1) := !rhs(cfg.XLEN-1)
+        rhsNeg(cfg.XLEN-1) := !rhs(cfg.XLEN-1)
     }
     when (insn.alu.subtract) {
-        rhs(cfg.XLEN-2 downto 0) := ~rhs(cfg.XLEN-2 downto 0)
+        rhsNeg(cfg.XLEN-2 downto 0) := ~rhs(cfg.XLEN-2 downto 0)
     }
-    val adder = lhs.expand + rhs.expand + cin.asUInt.resize(cfg.XLEN)
+    val adder = lhsNeg.expand + rhsNeg.expand + cin.asUInt.resize(cfg.XLEN + 1)
     
     // Comparator.
     val zero  = adder === U(0, cfg.XLEN bits)
@@ -79,15 +86,13 @@ case class Alu(cfg: CobraCfg) extends Component {
     val shifter = UInt(cfg.XLEN bits)
     when (insn.alu.shiftRight && insn.alu.arithShift) {
         // Arithmetic shift right.
-        shifter := (data1.asSInt |>> data2(log2Up(cfg.XLEN)-1 downto 0).asUInt).asUInt
-        
+        shifter := (lhs.asSInt |>> rhs(log2Up(cfg.XLEN)-1 downto 0)).asUInt
     } elsewhen (insn.alu.shiftRight) {
         // Logical shift right.
-        shifter := data1.asUInt |>> data2(log2Up(cfg.XLEN)-1 downto 0).asUInt
-        
+        shifter := lhs |>> rhs(log2Up(cfg.XLEN)-1 downto 0)
     } otherwise {
         // Logical shift left.
-        shifter := data1.asUInt |<< data2(log2Up(cfg.XLEN)-1 downto 0).asUInt
+        shifter := lhs |<< rhs(log2Up(cfg.XLEN)-1 downto 0)
     }
     
     // Output multiplexer.
@@ -98,6 +103,8 @@ case class Alu(cfg: CobraCfg) extends Component {
         is (ALUMux.BITWISE)    { io.dout.payload.data1 := bitwise }
     }
     io.dout.payload.data2 := data2
+    io.dout.payload.insn := insn
+    io.dout.payload.pc := pc
     
     // Stream logic.
     io.dout.valid := valid
